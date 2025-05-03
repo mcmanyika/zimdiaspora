@@ -1,14 +1,19 @@
+'use client';
+
 import ProposalList from "../../modules/proposals/components/ProposalList";
 import { useState, useEffect } from "react";
+import Admin from "../../components/layout/Admin";
 import ProposalForm from "../../modules/proposals/components/ProposalForm";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Sidebar from "../../components/layout/Sidebar";
 import Header from "../../components/layout/Header";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import dynamic from 'next/dynamic'
 
-// Register ChartJS components
-ChartJS.register(ArcElement, Tooltip, Legend);
+// Dynamically import ChartJS components with ssr disabled
+const Pie = dynamic(
+  () => import('react-chartjs-2').then(mod => mod.Pie),
+  { ssr: false }
+)
 
 export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +39,14 @@ export default function Dashboard() {
     });
 
     const supabase = createClientComponentClient();
+
+    useEffect(() => {
+        // Register ChartJS components on client-side only
+        import('chart.js').then(mod => {
+            const { Chart, ArcElement, Tooltip, Legend } = mod
+            Chart.register(ArcElement, Tooltip, Legend)
+        })
+    }, [])
 
     useEffect(() => {
         async function fetchDashboardData() {
@@ -195,6 +208,7 @@ export default function Dashboard() {
     }
 
     return (
+      <Admin>
       <div className="p-6 relative">
         <Header />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
@@ -323,5 +337,6 @@ export default function Dashboard() {
           />
         )}
       </div>
+      </Admin>
     )
   }

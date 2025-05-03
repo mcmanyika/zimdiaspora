@@ -17,22 +17,21 @@ export default function SignIn() {
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error) throw error
         if (session) {
-          router.push('/')
+          router.refresh()
+          router.replace('/')
         }
       } catch (error) {
         console.error('Error checking auth session:', error)
-        router.push('/auth/signin')
       } finally {
         setIsLoading(false)
       }
     }
 
     // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
-        router.push('/')
-      } else {
-        router.push('/auth/signin')
+        await router.refresh()
+        router.replace('/')
       }
     })
 
@@ -81,9 +80,8 @@ export default function SignIn() {
           redirectTo={process.env.NEXT_PUBLIC_SITE_URL 
             ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
             : `${window.location.origin}/auth/callback`}
-          onAuthSuccess={(session) => {
-            router.refresh();
-            router.push('/');
+          onAuthSuccess={() => {
+            router.refresh()
           }}
         />
       </div>
