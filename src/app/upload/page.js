@@ -12,7 +12,12 @@ function UploadProfile() {
   const router = useRouter();
   const supabase = createClientComponentClient();
   const [formData, setFormData] = useState({
-    gender: ''
+    gender: '',
+    dateOfBirth: '',
+    phoneNumber: '',
+    country: '',
+    occupation: '',
+    professionalSkills: ''
   });
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -79,6 +84,11 @@ function UploadProfile() {
             full_name: session.user.display_name,
             email: session.user.email,
             gender: formData.gender,
+            date_of_birth: formData.dateOfBirth,
+            phone_number: formData.phoneNumber,
+            country: formData.country,
+            occupation: formData.occupation,
+            professional_skills: formData.professionalSkills,
             updated_at: new Date()
           })
           .eq('id', session.user.id)
@@ -93,6 +103,11 @@ function UploadProfile() {
               full_name: session.user.display_name,
               email: session.user.email,
               gender: formData.gender,
+              date_of_birth: formData.dateOfBirth,
+              phone_number: formData.phoneNumber,
+              country: formData.country,
+              occupation: formData.occupation,
+              professional_skills: formData.professionalSkills,
               created_at: new Date()
             }
           ])
@@ -107,7 +122,12 @@ function UploadProfile() {
       console.log('Operation successful, data:', result.data);
       toast.success(existingProfile ? 'Profile updated successfully!' : 'Profile created successfully!');
       setFormData({
-        gender: ''
+        gender: '',
+        dateOfBirth: '',
+        phoneNumber: '',
+        country: '',
+        occupation: '',
+        professionalSkills: ''
       });
       
       router.push('/');
@@ -129,7 +149,19 @@ function UploadProfile() {
   return (
     <SmallLayout>
       <>
-        <h1 className="text-2xl font-bold mb-6">Upload Profile</h1>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+        <h1 className="text-2xl font-bold mb-6">Personal Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 w-[600px]">
          
           <div>
@@ -144,6 +176,67 @@ function UploadProfile() {
               <option value="male">Male</option>
               <option value="female">Female</option>
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="dateOfBirth" className="block mb-2">Date of Birth</label>
+            <input
+              type="date"
+              name="dateOfBirth"
+              value={formData.dateOfBirth}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded-md"
+              required
+              max={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+
+          <div>
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              placeholder="Phone Number"
+              className="w-full p-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <input
+              type="text"
+              name="country"
+              value={formData.country}
+              onChange={handleInputChange}
+              placeholder="Country"
+              className="w-full p-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <input
+              type="text"
+              name="occupation"
+              value={formData.occupation}
+              onChange={handleInputChange}
+              placeholder="Occupation"
+              className="w-full p-2 border rounded-md"
+              required
+            />
+          </div>
+
+          <div>
+            <textarea
+              name="professionalSkills"
+              value={formData.professionalSkills}
+              onChange={handleInputChange}
+              placeholder="Professional Skills (separate with commas)"
+              className="w-full p-2 border rounded-md"
+              rows="3"
+              required
+            />
           </div>
 
           <button
