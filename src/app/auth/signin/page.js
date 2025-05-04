@@ -134,7 +134,12 @@ export default function SignIn() {
           supabaseClient={supabase}
           providers={['google']}
           onlyThirdPartyProviders
-          redirectTo={`${window.location.origin}/auth/callback`}
+          redirectTo={process.env.NEXT_PUBLIC_SITE_URL 
+            ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
+            : `${window.location.origin}/auth/callback`}
+          onAuthSuccess={() => {
+            router.refresh()
+          }}
         />
       </div>
     </div>
