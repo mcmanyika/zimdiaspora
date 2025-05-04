@@ -132,7 +132,6 @@ export default function SignIn() {
 
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
           providers={['google']}
           onlyThirdPartyProviders
           redirectTo={`${window.location.origin}/auth/callback`}
