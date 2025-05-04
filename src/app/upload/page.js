@@ -1,28 +1,37 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SmallLayout from '../../components/layout/SmallLayout';
-import { createClient } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { ToastContainer, toast } from 'react-toastify';
 import { v4 as uuidv4 } from 'uuid';
 import 'react-toastify/dist/ReactToastify.css';
 import withAuth from '../../utils/withAuth';
 import { useRouter } from 'next/navigation';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
 function UploadProfile() {
   const router = useRouter();
+  const supabase = createClientComponentClient();
   const [formData, setFormData] = useState({
-    email: '',
-    gender: '',
-    user_type: 'member',
-    status: 'verified'
+    gender: ''
   });
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session found, redirecting to login...');
+        router.push('/login');
+        return;
+      }
+      console.log('Session found:', session.user.id);
+      setUserEmail(session.user.email);
+      setCheckingSession(false);
+    };
+    checkSession();
+  }, [router, supabase]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -37,37 +46,81 @@ function UploadProfile() {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        throw sessionError;
+      }
+      
+      if (!session) {
+        console.error('No session found');
+        throw new Error('No session found - please log in again');
+      }
+
+      // First check if profile exists
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .insert([
-          {
-            id: uuidv4(), // Generate a new UUID for each profile
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            email: formData.email,
+        .select()
+        .eq('id', session.user.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error checking existing profile:', fetchError);
+        throw fetchError;
+      }
+
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('profiles')
+          .update({
+            full_name: session.user.display_name,
+            email: session.user.email,
             gender: formData.gender,
-            user_type: formData.user_type,
-            status: formData.status,
             updated_at: new Date()
-          }
-        ]);
+          })
+          .eq('id', session.user.id)
+          .select();
+      } else {
+        // Insert new profile
+        result = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: session.user.id,
+              full_name: session.user.display_name,
+              email: session.user.email,
+              gender: formData.gender,
+              created_at: new Date()
+            }
+          ])
+          .select();
+      }
 
-      if (error) throw error;
+      if (result.error) {
+        console.error('Supabase operation error:', JSON.stringify(result.error, null, 2));
+        throw result.error;
+      }
 
-      toast.success('Profile uploaded successfully!');
+      console.log('Operation successful, data:', result.data);
+      toast.success(existingProfile ? 'Profile updated successfully!' : 'Profile created successfully!');
       setFormData({
-        email: '',
-        gender: '',
-        user_type: 'member',
-        status: 'verified'
+        gender: ''
       });
       
-      // Add redirect after successful upload
       router.push('/');
       
     } catch (error) {
-      console.error('Error uploading profile:', error);
-      toast.error('Failed to upload profile: ' + error.message);
+      console.error('Error handling profile:', error);
+      let errorMessage = 'An unexpected error occurred';
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      toast.error('Failed to handle profile: ' + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -78,20 +131,8 @@ function UploadProfile() {
       <>
         <h1 className="text-2xl font-bold mb-6">Upload Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 w-[600px]">
+         
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded-md"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Gender</label>
             <select
               name="gender"
               value={formData.gender}
@@ -102,21 +143,6 @@ function UploadProfile() {
               <option value="">Select Gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">User Type</label>
-            <select
-              name="user_type"
-              value={formData.user_type}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded-md"
-              required
-            >
-              <option value="member">Member</option>
-              <option value="super_user">Super User</option>
             </select>
           </div>
 
@@ -133,4 +159,4 @@ function UploadProfile() {
   );
 }
 
-export default UploadProfile;
+export default withAuth(UploadProfile);

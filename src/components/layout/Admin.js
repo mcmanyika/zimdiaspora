@@ -30,6 +30,11 @@ function Admin({ children }) {
             router.push('/upload');
             return;
           }
+
+          if (!data[0].gender) {
+            router.push('/upload');
+            return;
+          }
           
           setProfiles(data);
           setLoading(false);

@@ -1,90 +1,143 @@
 'use client'
 
-import { Auth } from '@supabase/auth-ui-react'
-import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Auth, ThemeSupa } from '@supabase/auth-ui-react'
 
 export default function SignIn() {
-  const router = useRouter()
   const supabase = createClientComponentClient()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
+  const [isSignUp, setIsSignUp] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     const checkUser = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        if (error) throw error
-        if (session) {
-          router.refresh()
-          router.replace('/')
-        }
-      } catch (error) {
-        console.error('Error checking auth session:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        await router.refresh()
         router.replace('/')
       }
-    })
+      setIsLoading(false)
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          const user = session.user
+          const fullName = user.user_metadata.full_name || user.user_metadata.name
+
+          if (user && fullName) {
+            await supabase.from('profiles').upsert({
+              id: user.id,
+              full_name: fullName,
+              email: user.email,
+            })
+          }
+
+          router.replace('/')
+        }
+      }
+    )
 
     checkUser()
-
-    // Cleanup subscription on unmount
-    return () => {
-      subscription?.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [router, supabase])
 
+  const handleSubmit = async () => {
+    setError(null)
+
+    if (!email || !password || (isSignUp && !fullName)) {
+      setError('Please fill in all required fields.')
+      return
+    }
+
+    if (isSignUp) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      })
+      if (error) setError(error.message)
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) setError(error.message)
+    }
+  }
+
   if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center">
-      <div>Loading...</div>
-    </div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    )
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-2xl">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
-            Welcome back
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to your account to continue
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md space-y-6">
+        <h2 className="text-2xl font-bold text-center">
+          {isSignUp ? 'Create an Account' : 'Sign In'}
+        </h2>
+
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
+        {isSignUp && (
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            className="w-full border border-gray-300 p-2 rounded"
+          />
+        )}
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full border border-gray-300 p-2 rounded"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full border border-gray-300 p-2 rounded"
+        />
+
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+        >
+          {isSignUp ? 'Sign Up' : 'Sign In'}
+        </button>
+
+        <button
+          onClick={() => setIsSignUp(!isSignUp)}
+          className="w-full text-sm text-gray-600 hover:underline"
+        >
+          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+        </button>
+
+        <div className="text-center text-gray-500 text-sm">OR</div>
 
         <Auth
           supabaseClient={supabase}
-          appearance={{
-            theme: ThemeSupa,
-            variables: {
-              default: {
-                colors: {
-                  brand: '#404040',
-                  brandAccent: '#262626',
-                },
-              },
-            },
-          }}
-          theme="light"
-          showLinks={true}
-          providers={[]}
-          redirectTo={process.env.NEXT_PUBLIC_SITE_URL 
-            ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-            : `${window.location.origin}/auth/callback`}
-          onAuthSuccess={() => {
-            router.refresh()
-          }}
+          appearance={{ theme: ThemeSupa }}
+          providers={['google']}
+          onlyThirdPartyProviders
+          redirectTo={`${window.location.origin}/auth/callback`}
         />
       </div>
     </div>
   )
-} 
+}

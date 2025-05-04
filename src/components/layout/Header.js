@@ -4,8 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
-export default function Header() {
+function Header() {
   const router = useRouter()
   const supabase = createClientComponentClient()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -59,7 +58,7 @@ export default function Header() {
           >
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <span className="text-sm font-medium text-gray-600">
-              {!loading && user.user_metadata.name?.[0]?.toUpperCase() }
+                {!loading && user?.user_metadata?.name ? user.user_metadata.name[0].toUpperCase() : '?'}
               </span>
             </div>
           </button>
@@ -69,12 +68,10 @@ export default function Header() {
               data-dropdown
               className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200"
             >
-              <div className="block w-full text-left px-4 py-2 text-sm text-gray-700">
-              
-              </div><button
+              <button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                <Link href="/profile">Hi, {user?.user_metadata.name}</Link>
+                <Link href="/profile">Hi, {user?.user_metadata?.name || ''}</Link>
               </button>
               <button
                 onClick={handleSignOut}
@@ -89,3 +86,4 @@ export default function Header() {
     </header>
   )
 }
+export default  Header
