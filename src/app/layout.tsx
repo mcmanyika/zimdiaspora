@@ -1,13 +1,11 @@
+
+
 import './globals.css'
 import 'react-toastify/dist/ReactToastify.css'
 import { Inter } from 'next/font/google'
-import { ToastContainer } from 'react-toastify'
+import AuthProvider from "../components/auth-provider"
 
 const inter = Inter({ subsets: ['latin'] })
-
-export const metadata = {
-  title: 'ZimInvest',
-}
 
 export default function RootLayout({
   children,
@@ -17,19 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <ToastContainer
-          position="bottom-center"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
+      <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )

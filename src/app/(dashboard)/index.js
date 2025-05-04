@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import Admin from "../../components/layout/Admin";
 import ProposalForm from "../../modules/proposals/components/ProposalForm";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import Sidebar from "../../components/layout/Sidebar";
 import Header from "../../components/layout/Header";
 import dynamic from 'next/dynamic'
 
@@ -224,18 +223,6 @@ export default function Dashboard() {
                     <div className="h-48 mb-4">
                         <Pie data={projectChartData} options={chartOptions} />
                     </div>
-                    <div className="text-center">
-                        <p className="text-gray-600">
-                            Total Budget: ${Object.values(dashboardData.investmentsByStatus)
-                                .reduce((a, b) => a + b, 0).toLocaleString()}
-                        </p>
-                        <p className="text-gray-600">
-                            Active: ${dashboardData.investmentsByStatus.active.toLocaleString()}
-                        </p>
-                        <p className="text-gray-600">
-                            Pending: ${dashboardData.investmentsByStatus.pending.toLocaleString()}
-                        </p>
-                    </div>
                 </>
             )}
           </div>
@@ -252,17 +239,6 @@ export default function Dashboard() {
                     <div className="h-48 mb-4">
                         <Pie data={proposalChartData} options={chartOptions} />
                     </div>
-                    <div className="text-center">
-                        <p className="text-gray-600">
-                            Total: {dashboardData.totalProposals} {dashboardData.totalProposals === 1 ? 'proposal' : 'proposals'}
-                        </p>
-                        <p className="text-gray-600">
-                            Active: {dashboardData.activeProposals} {dashboardData.activeProposals === 1 ? 'proposal' : 'proposals'}
-                        </p>
-                        <p className="text-gray-600">
-                            Pending: {dashboardData.pendingProposals} {dashboardData.pendingProposals === 1 ? 'proposal' : 'proposals'}
-                        </p>
-                    </div>
                 </>
             )}
           </div>
@@ -278,14 +254,6 @@ export default function Dashboard() {
                 <>
                     <div className="h-48 mb-4">
                         <Pie data={usersChartData} options={chartOptions} />
-                    </div>
-                    <div className="text-center">
-                        <p className="text-gray-600">
-                            Total Users: {dashboardData.totalUsers}
-                        </p>
-                        <p className="text-gray-600">
-                            Male: {dashboardData.usersByGender.male} | Female: {dashboardData.usersByGender.female}
-                        </p>
                     </div>
                 </>
             )}

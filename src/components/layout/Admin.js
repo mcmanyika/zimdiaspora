@@ -1,9 +1,65 @@
 'use client';
 
 import React from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
+import { useRouter } from 'next/navigation';
 
 function Admin({ children }) {
+  const supabase = createClientComponentClient()
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [profiles, setProfiles] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user?.email) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('email', user.email);
+            
+          if (error) throw error;
+          
+          if (!data || data.length === 0) {
+            router.push('/upload');
+            return;
+          }
+          
+          setProfiles(data);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError(err.message || 'An unexpected error occurred');
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    </div>;
+  }
+
+  if (error) {
+    return <div className="flex min-h-screen items-center justify-center text-red-500">
+      {error}
+    </div>;
+  }
+
+  if (!profiles) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}

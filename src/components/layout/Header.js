@@ -3,6 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 export default function Header() {
   const router = useRouter()
@@ -73,7 +74,7 @@ export default function Header() {
               </div><button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                Hi, {user?.user_metadata.name}
+                <Link href="/profile">Hi, {user?.user_metadata.name}</Link>
               </button>
               <button
                 onClick={handleSignOut}
