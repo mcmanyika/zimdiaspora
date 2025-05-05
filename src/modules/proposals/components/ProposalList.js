@@ -14,6 +14,7 @@ export default function ProposalList() {
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState('desc');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const isMobile = windowWidth < 768; // Define mobile breakpoint
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -107,10 +108,12 @@ export default function ProposalList() {
                 onClick={() => handleSort('title')}>
               Title {sortField === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
-            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('status')}>
-              Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
+            {!isMobile && (
+              <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  onClick={() => handleSort('status')}>
+                Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </th>
+            )}
             <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('budget')}>
               Target Amount {sortField === 'budget' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -129,9 +132,11 @@ export default function ProposalList() {
               <td className="px-6 py-4 p-2 whitespace-nowrap">
                 {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <ProposalStatusBadge status={proposal.status} />
-              </td>
+              {!isMobile && (
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <ProposalStatusBadge status={proposal.status} />
+                </td>
+              )}
               <td className="px-6 py-4 whitespace-nowrap">
                 USD {proposal.budget?.toLocaleString() || '0'}
               </td>
