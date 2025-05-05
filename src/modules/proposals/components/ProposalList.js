@@ -178,7 +178,7 @@ export default function ProposalList() {
                     console.log('Invest in proposal:', proposal.id);
                   }}
                 >
-                  INVEST
+                  INVEST 
                 </button>
               </td>
             </tr>
