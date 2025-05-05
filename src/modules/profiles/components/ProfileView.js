@@ -12,6 +12,7 @@ export default function ProfileView() {
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +38,15 @@ export default function ProfileView() {
     };
 
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleEdit = (profile) => {
@@ -87,12 +97,6 @@ export default function ProfileView() {
   if (loading) return (
     <div className="flex items-center justify-center p-4">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-  );
-  if (error) return (
-    <div className="text-red-600 p-4 rounded-md bg-red-50">
-      <p>Unable to load profile. Please try again later.</p>
-      <p className="mt-2 text-sm">{error}</p>
     </div>
   );
 
@@ -165,9 +169,10 @@ export default function ProfileView() {
           onClick={() => setIsModalOpen(false)}
         >
           <div 
-            className={`fixed inset-y-0 right-0 w-1/2 h-screen bg-white transform transition-transform duration-300 ease-in-out ${
+            className={`fixed inset-y-0 right-0 h-screen bg-white transform transition-transform duration-300 ease-in-out ${
               isModalOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
+            style={{ width: windowWidth > 600 ? '50%' : '100%' }}
             onClick={e => e.stopPropagation()}
           >
             <div className="h-full flex flex-col p-6">
