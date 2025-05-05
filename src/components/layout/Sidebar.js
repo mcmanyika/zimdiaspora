@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { 
   HomeIcon, 
-  CalendarIcon, 
+  UserIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
   ClipboardDocumentListIcon,
@@ -13,6 +13,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'My Profile', href: '/profile', icon: UserIcon },
   { name: 'Investments Overview', href: '/investments', icon: CurrencyDollarIcon },
   { name: 'My Portfolio', href: '/portfolio', icon: DocumentTextIcon },
   { name: 'Projects Updates', href: '/projects', icon: ClipboardDocumentListIcon },
