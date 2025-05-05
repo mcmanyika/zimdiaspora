@@ -1,11 +1,19 @@
 import ProposalStatusBadge from './ProposalStatusBadge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase/config';
 import { toast } from 'react-toastify';
 import LinearProgress from '@mui/material/LinearProgress';
 
 export default function ProposalDetailModal({ proposal, onClose }) {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!proposal) return null;
 
   return (
@@ -24,6 +32,8 @@ export default function ProposalDetailModal({ proposal, onClose }) {
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
+          style={{ width: windowWidth > 600 ? '50%' : '100%' }}
+            onClick={e => e.stopPropagation()}
         >
           <div className="p-6">
             {/* Header Section */}
@@ -31,6 +41,14 @@ export default function ProposalDetailModal({ proposal, onClose }) {
               <div className="flex-grow">
                 <h2 className="text-2xl font-semibold text-gray-900">{proposal.title}</h2>
               </div>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
             <div className="flex items-center gap-2">

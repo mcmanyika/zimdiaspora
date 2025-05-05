@@ -13,6 +13,7 @@ export default function ProposalList() {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [sortField, setSortField] = useState('created_at');
   const [sortDirection, setSortDirection] = useState('desc');
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -76,6 +77,15 @@ export default function ProposalList() {
     };
 
     fetchProposals();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   if (loading) return <div>Loading proposals...</div>;
