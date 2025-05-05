@@ -122,6 +122,9 @@ export default function ProposalList() {
                 onClick={() => handleSort('amount_raised')}>
               Raised Amount {sortField === 'amount_raised' && (sortDirection === 'asc' ? '↑' : '↓')}
             </th>
+            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Action
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -129,18 +132,22 @@ export default function ProposalList() {
             <tr key={proposal.id} 
                 className="hover:bg-gray-100 transition-colors duration-150 cursor-pointer"
                 onClick={() => setSelectedProposal(proposal)}>
-              <td className="px-6 py-4 p-2 whitespace-nowrap">
+              <td className="px-6 py-4 p-2 whitespace-nowrap cursor-pointer text-gray-900"
+                  onClick={() => setSelectedProposal(proposal)}>
                 {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
               </td>
               {!isMobile && (
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4 whitespace-nowrap cursor-pointer text-gray-900"
+                    onClick={() => setSelectedProposal(proposal)}>
                   <ProposalStatusBadge status={proposal.status} />
                 </td>
               )}
-              <td className="px-6 py-4 whitespace-nowrap">
+              <td className="px-6 py-4 whitespace-nowrap cursor-pointer text-gray-900"
+                  onClick={() => setSelectedProposal(proposal)}>
                 USD {proposal.budget?.toLocaleString() || '0'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap p-2">
+              <td className="px-6 py-4 whitespace-nowrap p-2 cursor-pointer"
+                  onClick={() => setSelectedProposal(proposal)}>
                 <div className="w-full max-w-xs">
                   <div className="flex items-center gap-2">
                     <LinearProgress 
@@ -156,11 +163,23 @@ export default function ProposalList() {
                         backgroundColor: '#f3f4f6'
                       }}
                     />
-                    <span className="text-sm ml-2 whitespace-nowrap">
+                    <span className="text-sm ml-2 whitespace-nowrap text-gray-900">
                       {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
                     </span>
                   </div>
                 </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap items-center justify-center">
+                <button
+                  className="bg-black hover:bg-gray-300 text-white font-sm px-4 rounded-md transition-colors duration-150 z-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Add your invest logic here
+                    console.log('Invest in proposal:', proposal.id);
+                  }}
+                >
+                  INVEST
+                </button>
               </td>
             </tr>
           ))}
