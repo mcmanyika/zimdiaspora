@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -9,7 +9,40 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [investmentDetails, setInvestmentDetails] = useState(null);
   const supabase = createClientComponentClient();
+
+  // Subscribe to real-time updates for the proposal
+  useEffect(() => {
+    if (!proposal?.id) return;
+
+    const subscription = supabase
+      .channel('proposal-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'proposals',
+          filter: `id=eq.${proposal.id}`
+        },
+        (payload) => {
+          console.log('Proposal updated:', payload.new);
+          // Update local state with new proposal data
+          if (payload.new) {
+            toast.info(`Proposal's raised amount updated to ${new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD'
+            }).format(payload.new.amount_raised)}`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [proposal?.id, supabase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,8 +138,15 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, email')
         .eq('id', user.id)
+        .single();
+
+      // Get updated proposal data
+      const { data: updatedProposal } = await supabase
+        .from('proposals')
+        .select('*')
+        .eq('id', proposal.id)
         .single();
 
       // Format the amount for display
@@ -115,12 +155,64 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         currency: 'USD'
       }).format(amount);
 
+      // Calculate funding percentage
+      const fundingPercentage = Math.round((updatedProposal.amount_raised / updatedProposal.budget) * 100);
+
+      // Store investment details for display
+      setInvestmentDetails({
+        amount: formattedAmount,
+        proposalTitle: proposal.title,
+        investorName: profile?.full_name || 'Anonymous Investor',
+        investorEmail: profile?.email,
+        fundingPercentage,
+        totalRaised: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(updatedProposal.amount_raised),
+        targetAmount: new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(updatedProposal.budget)
+      });
+
+      // Send confirmation email
+      try {
+        await fetch('/api/send-investment-confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: profile?.email,
+            investorName: profile?.full_name,
+            proposalTitle: proposal.title,
+            amount: formattedAmount,
+            fundingPercentage,
+            totalRaised: updatedProposal.amount_raised,
+            targetAmount: updatedProposal.budget
+          }),
+        });
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't throw error here, just log it
+      }
+
       // Show success message with investment details
       toast.success(
-        `Successfully invested ${formattedAmount} in "${proposal.title}"! Thank you for your investment.`,
+        <div>
+          <h3 className="font-bold mb-2">Investment Successful!</h3>
+          <p>Amount: {formattedAmount}</p>
+          <p>Project: {proposal.title}</p>
+          <p>Funding Progress: {fundingPercentage}%</p>
+          <p>Total Raised: {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+          }).format(updatedProposal.amount_raised)}</p>
+          <p className="mt-2">A confirmation email has been sent to your registered email address.</p>
+        </div>,
         {
           position: "bottom-center",
-          autoClose: 5000,
+          autoClose: 30000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
@@ -128,8 +220,10 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         }
       );
 
-      // Close the modal
-      onClose();
+      // Close the modal after a short delay
+      setTimeout(() => {
+        onClose();
+      }, 2000);
       
     } catch (err) {
       console.error('Payment error:', {
@@ -216,6 +310,17 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
             </button>
           </div>
         </form>
+
+        {investmentDetails && (
+          <div className="mt-4 p-4 bg-green-50 rounded-md">
+            <h3 className="font-bold text-green-800 mb-2">Investment Details</h3>
+            <p className="text-sm text-green-700">Amount: {investmentDetails.amount}</p>
+            <p className="text-sm text-green-700">Project: {investmentDetails.proposalTitle}</p>
+            <p className="text-sm text-green-700">Funding Progress: {investmentDetails.fundingPercentage}%</p>
+            <p className="text-sm text-green-700">Total Raised: {investmentDetails.totalRaised}</p>
+            <p className="text-sm text-green-700">Target Amount: {investmentDetails.targetAmount}</p>
+          </div>
+        )}
       </div>
     </div>
   );

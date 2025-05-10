@@ -34,6 +34,7 @@
     "react-hook-form": "^7.54.2",
     "react-hooks-global-state": "^2.1.0",
     "react-toastify": "^11.0.5",
+    "resend": "^4.5.1",
     "stripe": "^18.1.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.1",
