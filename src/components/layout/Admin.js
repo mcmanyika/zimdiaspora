@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import { useRouter } from 'next/navigation';
-
+import Header from './Header';
 function Admin({ children }) {
   const supabase = createClientComponentClient()
   const [loading, setLoading] = useState(true);
@@ -76,6 +76,7 @@ function Admin({ children }) {
 
       {/* Main Content */}
       <main className="flex-1 pb-16 md:pb-0 w-full transition-all duration-300 ease-in-out">
+        <Header />
         {children}
       </main>
     </div>

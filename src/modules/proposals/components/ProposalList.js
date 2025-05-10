@@ -5,8 +5,9 @@ import ProposalStatusBadge from './ProposalStatusBadge';
 import ProposalDetailModal from './ProposalDetailModal';
 import StatusButton from './StatusButton';
 import LinearProgress from '@mui/material/LinearProgress';
+import InvestmentModal from './InvestmentModal';
 
-export default function ProposalList() {
+export default function ProposalList({ showInvestButton = true }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,6 +16,9 @@ export default function ProposalList() {
   const [sortDirection, setSortDirection] = useState('desc');
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const isMobile = windowWidth < 768; // Define mobile breakpoint
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedInvestmentProposal, setSelectedInvestmentProposal] = useState(null);
+
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -48,7 +52,7 @@ export default function ProposalList() {
   useEffect(() => {
     const fetchProposals = async () => {
       try {
-        console.log('Fetching proposals...');
+        setLoading(true);  // Ensure loading state is set before fetch
         const { data, error } = await supabase
           .from('proposals')
           .select('*')
@@ -66,11 +70,7 @@ export default function ProposalList() {
         
         setProposals(data || []);
       } catch (err) {
-        console.error('Error details:', {
-          message: err.message,
-          details: err.details,
-          hint: err.hint
-        });
+        console.error('Error fetching proposals:', err);
         setError(err);
       } finally {
         setLoading(false);
@@ -88,6 +88,57 @@ export default function ProposalList() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  
+
+  const handleInvestClick = async (proposal, e) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      window.location.href = '/login'; // Adjust this path to your login route
+      return;
+    }
+
+    // If authenticated, proceed with investment
+    setSelectedInvestmentProposal(proposal);
+    setShowInvestmentModal(true);
+  };
+
+  const handleInvestmentSubmit = async (investmentData) => {
+    try {
+      const currentUser = useAuthStore.getState().user;
+      
+      if (!currentUser) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('investments')
+        .insert([
+          {
+            investor_id: currentUser.id,
+            proposal_id: selectedInvestmentProposal.id,
+            amount: investmentData.amount,
+            investment_date: new Date().toISOString(),
+            status: 'PENDING',
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('Supabase error:', error.message);
+        throw error;
+      }
+
+      console.log('Investment submitted successfully:', data);
+      setShowInvestmentModal(false);
+      setSelectedInvestmentProposal(null);
+      
+    } catch (err) {
+      console.error('Error submitting investment:', err.message);
+    }
+  };
 
   if (loading) return <div>Loading proposals...</div>;
   if (error) return (
@@ -170,16 +221,7 @@ export default function ProposalList() {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap items-center justify-center">
-                <button
-                  className="bg-black hover:bg-gray-300 text-white font-sm px-4 rounded-md transition-colors duration-150 z-50"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Add your invest logic here
-                    console.log('Invest in proposal:', proposal.id);
-                  }}
-                >
-                  INVEST 
-                </button>
+                
               </td>
             </tr>
           ))}
@@ -190,6 +232,17 @@ export default function ProposalList() {
         <ProposalDetailModal
           proposal={selectedProposal}
           onClose={() => setSelectedProposal(null)}
+        />
+      )}
+
+      {showInvestmentModal && selectedInvestmentProposal && (
+        <InvestmentModal
+          proposal={selectedInvestmentProposal}
+          onClose={() => {
+            setShowInvestmentModal(false);
+            setSelectedInvestmentProposal(null);
+          }}
+          onSubmit={handleInvestmentSubmit}
         />
       )}
     </div>

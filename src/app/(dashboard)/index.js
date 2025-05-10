@@ -7,14 +7,14 @@ import ProposalForm from "../../modules/proposals/components/ProposalForm";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Header from "../../components/layout/Header";
 import dynamic from 'next/dynamic'
-
+import { withAuth } from '../../utils/withAuth';
 // Dynamically import ChartJS components with ssr disabled
 const Pie = dynamic(
   () => import('react-chartjs-2').then(mod => mod.Pie),
   { ssr: false }
 )
 
-export default function Dashboard() {
+function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -271,7 +271,7 @@ export default function Dashboard() {
               [+]
             </button>
           </h2>
-          <ProposalList />
+          <ProposalList showInvestButton={true} />
         </div>
 
         {/* Sliding Modal */}
@@ -308,3 +308,4 @@ export default function Dashboard() {
       </Admin>
     )
   }
+  export default withAuth(Dashboard);

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Auth } from '@supabase/auth-ui-react'
-
 export default function SignIn() {
   const supabase = createClientComponentClient()
   const router = useRouter()
@@ -19,7 +18,7 @@ export default function SignIn() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        router.replace('/')
+        router.replace('/account')
       }
       setIsLoading(false)
     }
@@ -38,7 +37,7 @@ export default function SignIn() {
             })
           }
 
-          router.replace('/')
+          router.replace('/account')
         }
       }
     )
@@ -128,8 +127,8 @@ export default function SignIn() {
           {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
         </button>
 
-        <div className="text-center text-gray-500 text-sm">OR</div>
-
+        {/* <div className="text-center text-gray-500 text-sm">OR</div>
+        
         <Auth
           supabaseClient={supabase}
           providers={['google']}
@@ -140,7 +139,7 @@ export default function SignIn() {
           onAuthSuccess={() => {
             router.refresh()
           }}
-        />
+        /> */}
       </div>
     </div>
   )

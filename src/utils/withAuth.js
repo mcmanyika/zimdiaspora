@@ -2,73 +2,74 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-const withAuth = (WrappedComponent, requiredRoles = null) => {
-  return function WithAuthComponent(props) {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+export function withAuth(WrappedComponent) {
+  return function ProtectedRoute(props) {
     const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const supabase = createClientComponentClient();
 
     useEffect(() => {
-      const checkUser = async () => {
+      const checkAuth = async () => {
         try {
-          const { data: { session }, error } = await supabase.auth.getSession();
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
-          if (error) throw error;
+          if (sessionError) {
+            throw sessionError;
+          }
           
           if (!session) {
             router.push('/login');
             return;
           }
           
-          setUser(session.user);
-
-          // Check for role
-          if (requiredRoles) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('user_type')
-              .eq('id', session.user.id)
-              .single();
-
-            if (
-              profileError ||
-              (Array.isArray(requiredRoles)
-                ? !requiredRoles.includes(profile?.user_type)
-                : profile?.user_type !== requiredRoles)
-            ) {
-              router.push('/unauthorized');
-              return;
-            }
-          }
+          setIsAuthenticated(true);
+          setError(null);
         } catch (error) {
           console.error('Auth error:', error);
+          setError(error.message);
           router.push('/login');
         } finally {
           setLoading(false);
         }
       };
 
-      checkUser();
-    }, [router, requiredRoles]);
+      checkAuth();
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!session) {
+          router.push('/login');
+        }
+      });
+
+      return () => subscription.unsubscribe();
+    }, [router]);
 
     if (loading) {
-      return <div>Loading...</div>;
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      );
     }
 
-    if (!user) {
-      return null; // Router will handle redirect
+    if (error) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-red-500">Authentication error: {error}</p>
+        </div>
+      );
     }
 
-    return <WrappedComponent {...props} user={user} />;
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    return <WrappedComponent {...props} />;
   };
-};
+}
 
 export default withAuth;

@@ -1,24 +1,33 @@
 'use client'
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useGlobalState } from '../../store'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
 function Header() {
-  const router = useRouter()
   const supabase = createClientComponentClient()
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const router = useRouter()
+  const [appName] = useGlobalState('appName')
   const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
-      setLoading(false)
     }
     getUser()
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
+  useEffect(() => {
     // Add click event listener to close dropdown when clicking outside
     const handleClickOutside = (event) => {
       const dropdown = document.querySelector('[data-dropdown]')
@@ -36,7 +45,7 @@ function Header() {
 
     document.addEventListener('click', handleClickOutside)
     return () => document.removeEventListener('click', handleClickOutside)
-  }, [supabase, isDropdownOpen])
+  }, [isDropdownOpen])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -47,9 +56,8 @@ function Header() {
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">
-        Welcome to ZimDiaspora
+        Hello {user?.user_metadata?.name } 
         </h1>
-        
         <div className="relative">
           <button
             data-dropdown-button
@@ -58,7 +66,7 @@ function Header() {
           >
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <span className="text-sm font-medium text-gray-600">
-                {!loading && user?.user_metadata?.name ? user.user_metadata.name[0].toUpperCase() : '?'}
+                {user?.email ? user.email[0].toUpperCase() : '?'}
               </span>
             </div>
           </button>
@@ -71,7 +79,7 @@ function Header() {
               <button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                <Link href="/profile">Hi, {user?.user_metadata?.name || ''}</Link>
+                <Link href="/profile">Hi, {user?.user_metadata?.name || user?.email || 'User'}</Link>
               </button>
               <button
                 onClick={handleSignOut}
@@ -86,4 +94,5 @@ function Header() {
     </header>
   )
 }
-export default  Header
+
+export default Header
