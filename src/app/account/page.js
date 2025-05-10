@@ -103,7 +103,7 @@ const Dashboard = () => {
 
           {/* Ownership & Progress */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 flex bg-lime-300 rounded-lg p-8 text-center">
+            <div className="flex-1 bg-lime-300 rounded-lg p-8 text-center">
               <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
               <div className="text-4xl font-bold">4%</div>
             </div>
