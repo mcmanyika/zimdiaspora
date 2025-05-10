@@ -303,39 +303,51 @@ const Dashboard = () => {
 
           {/* Ownership & Progress */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center">
-              <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
-              <div className="text-4xl font-bold">
-                {isLoading ? (
-                  <div className="animate-pulse bg-gray-300 h-12 w-24 mx-auto rounded"></div>
-                ) : (
-                  `${ownershipShare}%`
-                )}
+            {proposalData && userStats.currentProjectInvestment > 0 ? (
+              <>
+                <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center">
+                  <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
+                  <div className="text-4xl font-bold">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 h-12 w-24 mx-auto rounded"></div>
+                    ) : (
+                      `${ownershipShare}%`
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
+                  <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
+                  <div className="flex items-center mb-2">
+                    {[...Array(10)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-4 h-8 mx-0.5 rounded ${
+                          i < Math.floor((proposalData?.amount_raised || 0) / (proposalData?.budget || 1) * 10) 
+                            ? "bg-blue-700" 
+                            : "bg-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-base font-bold">AMOUNT INVESTED</div>
+                  <div className="text-xl font-bold text-blue-700">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 h-8 w-32 mx-auto rounded"></div>
+                    ) : (
+                      `$${userStats.currentProjectInvestment.toLocaleString()}`
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center">
+                <div className="text-lg text-gray-600">
+                  {proposalData
+                    ? "You haven't invested in this project yet"
+                    : "No active project in this category"}
+                </div>
               </div>
-            </div>
-            <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
-              <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
-              <div className="flex items-center mb-2">
-                {[...Array(10)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-4 h-8 mx-0.5 rounded ${
-                      i < Math.floor((proposalData?.amount_raised || 0) / (proposalData?.budget || 1) * 10) 
-                        ? "bg-blue-700" 
-                        : "bg-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="text-base font-bold">AMOUNT INVESTED</div>
-              <div className="text-xl font-bold text-blue-700">
-                {isLoading ? (
-                  <div className="animate-pulse bg-gray-300 h-8 w-32 mx-auto rounded"></div>
-                ) : (
-                  `$${userStats.currentProjectInvestment.toLocaleString()}`
-                )}
-              </div>
-            </div>
+            )}
 
             {/* Documents */}
             <div className="flex-1 gap-4">
