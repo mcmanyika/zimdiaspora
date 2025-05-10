@@ -1,7 +1,11 @@
 import Stripe from 'stripe';
-import { supabase } from '../../lib/supabase/config';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,6 +14,13 @@ export default async function handler(req, res) {
 
   try {
     const { amount, proposalId } = req.body;
+
+    if (!amount || !proposalId) {
+      console.error('Missing required parameters:', { amount, proposalId });
+      return res.status(400).json({ message: 'Missing required parameters' });
+    }
+
+    console.log('Creating payment intent for amount:', amount);
 
     // Create a PaymentIntent with the specified amount
     const paymentIntent = await stripe.paymentIntents.create({
@@ -23,11 +34,22 @@ export default async function handler(req, res) {
       },
     });
 
-    res.status(200).json({
+    console.log('Payment intent created:', {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      amount: paymentIntent.amount,
+    });
+
+    // Return both the client secret and payment intent ID
+    return res.status(200).json({
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
-    res.status(500).json({ message: 'Error creating payment intent' });
+    return res.status(500).json({ 
+      message: 'Error creating payment intent',
+      error: error.message 
+    });
   }
 } 

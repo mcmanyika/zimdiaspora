@@ -29,6 +29,33 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
     }
 
     try {
+      // Create payment intent first
+      toast.info('Creating payment intent...');
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          proposalId: proposal.id,
+        }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('Payment intent creation failed:', responseData);
+        throw new Error(responseData.message || 'Failed to create payment intent');
+      }
+
+      const { clientSecret, paymentIntentId } = responseData;
+
+      if (!clientSecret || !paymentIntentId) {
+        console.error('Invalid payment intent response:', responseData);
+        throw new Error('Invalid response from payment intent creation');
+      }
+
       toast.info('Validating card details...');
       const { error: cardError } = await stripe.createPaymentMethod({
         type: 'card',
@@ -53,32 +80,71 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
       }
 
       // Confirm payment on the server
-      const response = await fetch('/api/confirm-payment', {
+      const confirmResponse = await fetch('/api/confirm-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          paymentIntentId: clientSecret,
+          paymentIntentId: paymentIntentId,
           proposalId: proposal.id,
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to confirm payment');
+      const confirmData = await confirmResponse.json();
+
+      if (!confirmResponse.ok) {
+        console.error('Payment confirmation error:', {
+          status: confirmResponse.status,
+          data: confirmData
+        });
+        throw new Error(confirmData.message || 'Failed to confirm payment');
       }
 
-      const { investmentId } = await response.json();
-      
-      // Close modal and redirect to success page
+      // Get user's profile for the success message
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      // Format the amount for display
+      const formattedAmount = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount);
+
+      // Show success message with investment details
+      toast.success(
+        `Successfully invested ${formattedAmount} in "${proposal.title}"! Thank you for your investment.`,
+        {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
+
+      // Close the modal
       onClose();
-      window.location.href = `/payment/success?investmentId=${investmentId}&proposalId=${proposal.id}`;
       
     } catch (err) {
-      console.error('Payment error:', err);
+      console.error('Payment error:', {
+        message: err.message,
+        error: err
+      });
       setError(err.message);
-      toast.error(`Payment failed: ${err.message}`);
+      toast.error(`Payment failed: ${err.message}`, {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }
