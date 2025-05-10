@@ -89,7 +89,7 @@ function Header() {
               <button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                <Link href="/profile">Hi, {user?.user_metadata?.full_name ||  'User'}</Link>
+                <Link href="/profile">My Profile</Link>
               </button>
               <button
                 onClick={handleSignOut}

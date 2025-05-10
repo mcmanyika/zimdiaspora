@@ -19,11 +19,7 @@ export default function Sidebar() {
   const pathname = usePathname()
   const supabase = createClientComponentClient()
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.refresh()
-    window.location.reload()
-  }
+  
 
   return (
     <div className="flex flex-col z-50">

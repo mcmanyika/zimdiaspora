@@ -8,6 +8,7 @@ const tabs = ["REAL ESTATE", "TOURISM", "FARMING", "ENERGY"];
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState("TOURISM");
   const [user, setUser] = useState(null);
+  const [proposalData, setProposalData] = useState(null);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -23,6 +24,36 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe()
   }, [supabase])
+
+  useEffect(() => {
+    const fetchProposalData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('proposals')
+          .select('budget, amount_raised')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('Supabase error:', error);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          console.log('No active proposals found');
+          setProposalData(null);
+          return;
+        }
+
+        setProposalData(data[0]);
+      } catch (error) {
+        console.error('Error fetching proposal data:', error.message || error);
+      }
+    };
+
+    fetchProposalData();
+  }, [supabase]);
 
   return (
     <Admin>
@@ -88,15 +119,21 @@ const Dashboard = () => {
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">CAPITAL</div>
-                <div className="text-xl font-bold text-wrap">$1,500,000</div>
+                <div className="text-xl font-bold text-wrap">
+                  ${proposalData?.budget?.toLocaleString() || '0'}
+                </div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">REMAINING</div>
-                <div className="text-xl font-bold">$1,000,000</div>
+                <div className="text-xl font-bold">
+                  ${((proposalData?.budget || 0) - (proposalData?.amount_raised || 0)).toLocaleString()}
+                </div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">PROJECT TOTAL</div>
-                <div className="text-xl font-bold">$2,500,000</div>
+                <div className="text-xl font-bold">
+                  ${proposalData?.budget?.toLocaleString() || '0'}
+                </div>
               </div>
             </div>
           </div>

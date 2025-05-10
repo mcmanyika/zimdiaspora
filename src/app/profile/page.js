@@ -7,7 +7,6 @@ import Header from '../../components/layout/Header';
 export default function MyProfile() {
   return (
     <Admin>
-      <Header />
       <ProfileView />
     </Admin>
   )
