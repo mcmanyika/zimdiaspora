@@ -115,6 +115,11 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchProposalData = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         let query = supabase
@@ -139,7 +144,6 @@ const Dashboard = () => {
         }
 
         if (!proposal || proposal.length === 0) {
-          console.log('No active proposals found');
           setProposalData(null);
           setIsLoading(false);
           return;
@@ -207,6 +211,7 @@ const Dashboard = () => {
     <Admin>
       <div className="min-h-screen bg-gray-100 py-10 px-2">
         <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
+
           {/* Category Tabs */}
           <div className="flex flex-col md:flex-row justify-start mb-6 gap-2">
             {CATEGORIES.map((tab) => (
