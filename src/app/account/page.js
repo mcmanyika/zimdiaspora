@@ -103,11 +103,11 @@ const Dashboard = () => {
 
           {/* Ownership & Progress */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 bg-lime-300 rounded-lg p-8 text-center">
+            <div className="flex-1 flex bg-lime-300 rounded-lg p-8 text-center">
               <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
               <div className="text-4xl font-bold">4%</div>
             </div>
-            <div className="flex-2 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
+            <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
               <div className="text-xs text-gray-500 mb-2">GOAL $10,000</div>
               <div className="flex items-center mb-2">
                 {[...Array(10)].map((_, i) => (
@@ -122,20 +122,21 @@ const Dashboard = () => {
               <div className="text-base font-bold">AMOUNT INVESTED</div>
               <div className="text-xl font-bold text-blue-700">$2,000</div>
             </div>
-          </div>
+          
 
           {/* Documents */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex-1 gap-4">
             {["Title Deeds", "Bank Statements", "Letters / Documents"].map((label) => (
               <select
                 key={label}
-                className="w-full p-4 rounded-lg bg-blue-700 text-white font-bold text-lg"
+                className="w-full p-4 m-2 rounded-lg bg-blue-700 text-white font-bold text-lg"
               >
                 <option>{label}</option>
                 <option>Download</option>
                 <option>View</option>
               </select>
             ))}
+          </div>
           </div>
         </div>
       </div>
