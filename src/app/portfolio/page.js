@@ -25,10 +25,6 @@ function Dashboard() {
         recentUpdates: [],
         upcomingEvents: [],
         totalUsers: 0,
-        usersByGender: {
-            male: 0,
-            female: 0
-        }
     });
 
     const supabase = createClientComponentClient();
@@ -108,42 +104,10 @@ function Dashboard() {
     return (
       <Admin>
       <div className="p-6 relative">
-
         {/* Proposals List Section */}
         <div className="mt-8">
           <ProposalList showInvestButton={true} />
         </div>
-
-        {/* Sliding Modal */}
-        <div 
-          className={`fixed top-0 right-0 w-1/2 h-full bg-white shadow-2xl transform transition-transform duration-300 ease-in-out ${
-            isModalOpen ? 'translate-x-0' : 'translate-x-full'
-          } z-50`}
-        >
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">New Proposal</h2>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            {/* Add your proposal form here */}
-            <div className="proposal-form">
-              <ProposalForm />
-            </div>
-          </div>
-        </div>
-
-        {/* Overlay */}
-        {isModalOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setIsModalOpen(false)}
-          />
-        )}
       </div>
       </Admin>
     )

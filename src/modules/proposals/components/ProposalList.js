@@ -6,6 +6,10 @@ import ProposalDetailModal from './ProposalDetailModal';
 import StatusButton from './StatusButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import InvestmentModal from './InvestmentModal';
+import { Elements } from '@stripe/react-stripe-js';
+import { stripePromise } from '../../../lib/stripe/stripeClient';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { toast } from 'react-toastify';
 
 export default function ProposalList({ showInvestButton = true }) {
   const [proposals, setProposals] = useState([]);
@@ -18,7 +22,8 @@ export default function ProposalList({ showInvestButton = true }) {
   const isMobile = windowWidth < 768; // Define mobile breakpoint
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedInvestmentProposal, setSelectedInvestmentProposal] = useState(null);
-
+  const [user, setUser] = useState(null);
+  const supabase = createClientComponentClient();
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -89,54 +94,82 @@ export default function ProposalList({ showInvestButton = true }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, [supabase]);
 
   const handleInvestClick = async (proposal, e) => {
     e.stopPropagation();
     
     if (!user) {
-      window.location.href = '/login'; // Adjust this path to your login route
+      toast.error('Please sign in to invest');
       return;
     }
 
-    // If authenticated, proceed with investment
     setSelectedInvestmentProposal(proposal);
     setShowInvestmentModal(true);
   };
 
   const handleInvestmentSubmit = async (investmentData) => {
     try {
-      const currentUser = useAuthStore.getState().user;
-      
-      if (!currentUser) {
-        console.error('User not authenticated');
+      if (!user) {
+        toast.error('Please sign in to invest');
         return;
       }
 
-      const { data, error } = await supabase
+      // Create investment record
+      const { data: investment, error: investmentError } = await supabase
         .from('investments')
         .insert([
           {
-            investor_id: currentUser.id,
+            investor_id: user.id,
             proposal_id: selectedInvestmentProposal.id,
             amount: investmentData.amount,
-            investment_date: new Date().toISOString(),
             status: 'PENDING',
           }
         ])
-        .select();
+        .select()
+        .single();
 
-      if (error) {
-        console.error('Supabase error:', error.message);
-        throw error;
+      if (investmentError) throw investmentError;
+
+      // Create payment intent
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: investmentData.amount,
+          proposalId: selectedInvestmentProposal.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create payment intent');
       }
 
-      console.log('Investment submitted successfully:', data);
+      const { clientSecret } = await response.json();
+
+      // Update investment with payment intent ID
+      const { error: updateError } = await supabase
+        .from('investments')
+        .update({ stripe_payment_intent_id: clientSecret })
+        .eq('id', investment.id);
+
+      if (updateError) throw updateError;
+
       setShowInvestmentModal(false);
       setSelectedInvestmentProposal(null);
+      toast.success('Investment initiated successfully');
       
     } catch (err) {
-      console.error('Error submitting investment:', err.message);
+      console.error('Error submitting investment:', err);
+      toast.error('Failed to process investment');
     }
   };
 
@@ -221,7 +254,14 @@ export default function ProposalList({ showInvestButton = true }) {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap items-center justify-center">
-                
+                {showInvestButton && proposal.status === 'active' && (
+                  <button
+                    onClick={(e) => handleInvestClick(proposal, e)}
+                    className="px-4 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                  >
+                    Invest
+                  </button>
+                )}
               </td>
             </tr>
           ))}
@@ -236,14 +276,16 @@ export default function ProposalList({ showInvestButton = true }) {
       )}
 
       {showInvestmentModal && selectedInvestmentProposal && (
-        <InvestmentModal
-          proposal={selectedInvestmentProposal}
-          onClose={() => {
-            setShowInvestmentModal(false);
-            setSelectedInvestmentProposal(null);
-          }}
-          onSubmit={handleInvestmentSubmit}
-        />
+        <Elements stripe={stripePromise}>
+          <InvestmentModal
+            proposal={selectedInvestmentProposal}
+            onClose={() => {
+              setShowInvestmentModal(false);
+              setSelectedInvestmentProposal(null);
+            }}
+            onSubmit={handleInvestmentSubmit}
+          />
+        </Elements>
       )}
     </div>
   );

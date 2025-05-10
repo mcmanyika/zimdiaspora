@@ -13,10 +13,13 @@ export default async function handler(req, res) {
 
     // Create a PaymentIntent with the specified amount
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Convert to cents
+      amount: Math.round(amount * 100), // Convert to cents
       currency: 'usd',
       metadata: {
         proposalId,
+      },
+      automatic_payment_methods: {
+        enabled: true,
       },
     });
 

@@ -3,10 +3,10 @@ import React, { useState, useEffect } from "react";
 import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
-const tabs = ["REAL ESTATE", "TOURISM", "FARMING", "ENERGY"];
+const tabs = ["REAL ESTATE"];
 
 const Dashboard = () => {
-  const [selectedTab, setSelectedTab] = useState("TOURISM");
+  const [selectedTab, setSelectedTab] = useState("REAL ESTATE");
   const [user, setUser] = useState(null);
   const [proposalData, setProposalData] = useState(null);
   const supabase = createClientComponentClient();
@@ -90,12 +90,12 @@ const Dashboard = () => {
             <div className="flex-1 flex space-x-4">
               <button
                 className={`flex-1 rounded-lg p-4 font-bold ${
-                  selectedTab === "TOURISM"
+                  selectedTab === "REAL ESTATE"
                     ? "bg-lime-300 text-white"
                     : "bg-gray-200 text-gray-700"
                 }`}
               >
-                TOURISM
+                REAL ESTATE
               </button>
               <button
                 className={`flex-1 rounded-lg p-4 font-bold ${
@@ -104,7 +104,7 @@ const Dashboard = () => {
                     : "bg-gray-200 text-gray-700"
                 }`}
               >
-                ENERGY
+                AGRICULTURE
               </button>
             </div>
           </div>
