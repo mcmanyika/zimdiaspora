@@ -48,7 +48,7 @@ const Dashboard = () => {
           {/* User Summary */}
           <div className="flex flex-col md:flex-row justify-between mb-6 space-y-2 md:space-y-0 md:space-x-4">
             <div className="bg-gray-100 rounded-lg p-4 flex-1 mb-2 md:mb-0">
-              <div className="font-bold">{user?.user_metadata?.name || ''}</div>
+              <div className="font-bold">{user?.user_metadata?.full_name || ''}</div>
               <div>
                 Total Investment: <span className="font-bold">$10,000</span>
               </div>

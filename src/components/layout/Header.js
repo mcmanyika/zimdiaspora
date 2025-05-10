@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useGlobalState } from '../../store'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { getSupabaseClient } from '../../lib/supabase/client'
 
 function Header() {
-  const supabase = createClientComponentClient()
+  const supabase = getSupabaseClient()
   const router = useRouter()
   const [appName] = useGlobalState('appName')
   const [user, setUser] = useState(null)
@@ -15,12 +15,22 @@ function Header() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        if (error) {
+          console.error('Error getting user:', error.message)
+          return
+        }
+        console.log('User session:', user)
+        setUser(user)
+      } catch (err) {
+        console.error('Unexpected error getting user:', err)
+      }
     }
     getUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user)
       setUser(session?.user || null)
     })
 
@@ -56,7 +66,7 @@ function Header() {
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">
-        Hello {user?.user_metadata?.name } 
+        Hello {user?.user_metadata?.full_name } 
         </h1>
         <div className="relative">
           <button
@@ -79,7 +89,7 @@ function Header() {
               <button
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                <Link href="/profile">Hi, {user?.user_metadata?.name || user?.email || 'User'}</Link>
+                <Link href="/profile">Hi, {user?.user_metadata?.full_name ||  'User'}</Link>
               </button>
               <button
                 onClick={handleSignOut}
