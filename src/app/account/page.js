@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
@@ -19,6 +19,7 @@ const Dashboard = () => {
     numberOfProjects: 0,
     currentProjectInvestment: 0
   });
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -115,6 +116,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchProposalData = async () => {
       try {
+        setIsLoading(true);
         let query = supabase
           .from('proposals')
           .select('id, title, budget, amount_raised, category')
@@ -139,6 +141,7 @@ const Dashboard = () => {
         if (!proposal || proposal.length === 0) {
           console.log('No active proposals found');
           setProposalData(null);
+          setIsLoading(false);
           return;
         }
 
@@ -186,6 +189,8 @@ const Dashboard = () => {
         });
       } catch (error) {
         console.error('Error fetching proposal data:', error.message || error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -193,9 +198,10 @@ const Dashboard = () => {
   }, [supabase, selectedTab, user, selectedProjectId]);
 
   // Calculate ownership share percentage
-  const ownershipShare = proposalData?.amount_raised 
-    ? ((userStats.currentProjectInvestment / proposalData.amount_raised) * 100).toFixed(1)
-    : 0;
+  const ownershipShare = useMemo(() => {
+    if (!proposalData?.amount_raised || !userStats.currentProjectInvestment) return 0;
+    return ((userStats.currentProjectInvestment / proposalData.amount_raised) * 100).toFixed(1);
+  }, [proposalData?.amount_raised, userStats.currentProjectInvestment]);
 
   return (
     <Admin>
@@ -299,7 +305,13 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center">
               <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
-              <div className="text-4xl font-bold">{ownershipShare}%</div>
+              <div className="text-4xl font-bold">
+                {isLoading ? (
+                  <div className="animate-pulse bg-gray-300 h-12 w-24 mx-auto rounded"></div>
+                ) : (
+                  `${ownershipShare}%`
+                )}
+              </div>
             </div>
             <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
               <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
@@ -316,24 +328,30 @@ const Dashboard = () => {
                 ))}
               </div>
               <div className="text-base font-bold">AMOUNT INVESTED</div>
-              <div className="text-xl font-bold text-blue-700">${userStats.currentProjectInvestment.toLocaleString()}</div>
+              <div className="text-xl font-bold text-blue-700">
+                {isLoading ? (
+                  <div className="animate-pulse bg-gray-300 h-8 w-32 mx-auto rounded"></div>
+                ) : (
+                  `$${userStats.currentProjectInvestment.toLocaleString()}`
+                )}
+              </div>
             </div>
-          
 
-          {/* Documents */}
-          <div className="flex-1 gap-4">
-            {["Title Deeds", "Bank Statements", "Letters / Documents"].map((label) => (
-              <select
-                key={label}
-                className="w-full p-4 m-2 rounded-lg bg-gray-400 text-white font-bold text-lg"
-              >
-                <option>{label}</option>
-                <option>Download</option>
-                <option>View</option>
-              </select>
-            ))}
+            {/* Documents */}
+            <div className="flex-1 gap-4">
+              {["Title Deeds", "Bank Statements", "Letters / Documents"].map((label) => (
+                <select
+                  key={label}
+                  className="w-full p-4 m-2 rounded-lg bg-gray-400 text-white font-bold text-lg"
+                >
+                  <option>{label}</option>
+                  <option>Download</option>
+                  <option>View</option>
+                </select>
+              ))}
+            </div>
           </div>
-          </div>
+
           {/* Existing Proposals List Section */}
           <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
