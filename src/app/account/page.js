@@ -4,12 +4,21 @@ import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
 import ProposalList from "../../modules/proposals/components/ProposalList";
-const tabs = ["REAL ESTATE"];
+
+const CATEGORIES = ["REAL ESTATE", "AGRICULTURE"];
 
 const Dashboard = () => {
   const [selectedTab, setSelectedTab] = useState("REAL ESTATE");
   const [user, setUser] = useState(null);
   const [proposalData, setProposalData] = useState(null);
+  const [showOnlyInvested, setShowOnlyInvested] = useState(false);
+  const [userInvestedProjects, setUserInvestedProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [userStats, setUserStats] = useState({
+    totalInvestment: 0,
+    numberOfProjects: 0,
+    currentProjectInvestment: 0
+  });
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -27,45 +36,180 @@ const Dashboard = () => {
   }, [supabase])
 
   useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch user's investments
+        const { data: investments, error: investmentsError } = await supabase
+          .from('investments')
+          .select('amount, proposal_id')
+          .eq('investor_id', user.id)
+          .eq('status', 'COMPLETED');
+
+        if (investmentsError) throw investmentsError;
+
+        // Calculate total investment and number of unique projects
+        const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
+        const uniqueProjects = new Set(investments.map(inv => inv.proposal_id)).size;
+
+        setUserStats({
+          totalInvestment,
+          numberOfProjects: uniqueProjects,
+          currentProjectInvestment: 0 // Will be updated when proposal data is fetched
+        });
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      }
+    };
+
+    fetchUserStats();
+  }, [user, supabase]);
+
+  useEffect(() => {
+    const fetchUserInvestedProjects = async () => {
+      if (!user) return;
+
+      try {
+        const { data: investments, error } = await supabase
+          .from('investments')
+          .select(`
+            proposal_id,
+            proposals (
+              id,
+              title,
+              category,
+              budget,
+              amount_raised
+            )
+          `)
+          .eq('investor_id', user.id)
+          .eq('status', 'COMPLETED');
+
+        if (error) throw error;
+
+        // Get unique projects with their details
+        const uniqueProjects = investments.reduce((acc, inv) => {
+          if (!acc.find(p => p.id === inv.proposals.id)) {
+            acc.push(inv.proposals);
+          }
+          return acc;
+        }, []);
+
+        setUserInvestedProjects(uniqueProjects);
+        
+        // Set the first project as selected if none is selected
+        if (!selectedProjectId && uniqueProjects.length > 0) {
+          const firstProject = uniqueProjects[0];
+          setSelectedProjectId(firstProject.id);
+          setSelectedTab(firstProject.category); // Set the category tab to match the first project
+        }
+      } catch (error) {
+        console.error('Error fetching user invested projects:', error);
+      }
+    };
+
+    fetchUserInvestedProjects();
+  }, [user, supabase]);
+
+  useEffect(() => {
     const fetchProposalData = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('proposals')
-          .select('budget, amount_raised')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1);
+          .select('id, title, budget, amount_raised, category')
+          .eq('status', 'active');
 
-        if (error) {
-          console.error('Supabase error:', error);
+        if (selectedProjectId) {
+          query = query.eq('id', selectedProjectId);
+        } else {
+          query = query
+            .eq('category', selectedTab)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        }
+
+        const { data: proposal, error: proposalError } = await query;
+
+        if (proposalError) {
+          console.error('Supabase error:', proposalError);
           return;
         }
 
-        if (!data || data.length === 0) {
+        if (!proposal || proposal.length === 0) {
           console.log('No active proposals found');
           setProposalData(null);
           return;
         }
 
-        setProposalData(data[0]);
+        // Get the actual investor count from investments table
+        const { data: investments, error: investmentsError } = await supabase
+          .from('investments')
+          .select('investor_id')
+          .eq('proposal_id', proposal[0].id)
+          .eq('status', 'COMPLETED');
+
+        if (investmentsError) {
+          console.error('Error fetching investments:', investmentsError);
+          return;
+        }
+
+        // Calculate unique investors
+        const uniqueInvestors = new Set(investments.map(inv => inv.investor_id)).size;
+
+        let currentProjectInvestment = 0;
+
+        // Only fetch user investments if user is logged in
+        if (user) {
+          const { data: userInvestments, error: userInvestmentsError } = await supabase
+            .from('investments')
+            .select('amount')
+            .eq('proposal_id', proposal[0].id)
+            .eq('investor_id', user.id)
+            .eq('status', 'COMPLETED');
+
+          if (userInvestmentsError) {
+            console.error('Error fetching user investments:', userInvestmentsError);
+          } else if (userInvestments) {
+            currentProjectInvestment = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+          }
+        }
+
+        setUserStats(prev => ({
+          ...prev,
+          currentProjectInvestment
+        }));
+
+        setProposalData({
+          ...proposal[0],
+          investor_count: uniqueInvestors
+        });
       } catch (error) {
         console.error('Error fetching proposal data:', error.message || error);
       }
     };
 
     fetchProposalData();
-  }, [supabase]);
+  }, [supabase, selectedTab, user, selectedProjectId]);
+
+  // Calculate ownership share percentage
+  const ownershipShare = proposalData?.amount_raised 
+    ? ((userStats.currentProjectInvestment / proposalData.amount_raised) * 100).toFixed(1)
+    : 0;
 
   return (
     <Admin>
       <div className="min-h-screen bg-gray-100 py-10 px-2">
         <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
-          {/* Tabs */}
+          {/* Category Tabs */}
           <div className="flex flex-col md:flex-row justify-start mb-6 gap-2">
-            {tabs.map((tab) => (
+            {CATEGORIES.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setSelectedTab(tab)}
+                onClick={() => {
+                  setSelectedTab(tab);
+                  setSelectedProjectId(null);
+                }}
                 className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
                   selectedTab === tab
                     ? "bg-lime-300 text-white"
@@ -78,50 +222,62 @@ const Dashboard = () => {
           </div>
 
           {/* User Summary */}
-          <div className="flex flex-col md:flex-row justify-between mb-6 space-y-2 md:space-y-0 md:space-x-4">
-            <div className="bg-gray-100 rounded-lg p-4 flex-1 mb-2 md:mb-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-gray-100 rounded-lg p-4">
               <div className="font-bold">{user?.user_metadata?.full_name || ''}</div>
               <div>
-                Total Investment: <span className="font-bold">$10,000</span>
+                Total Investment: <span className="font-bold">${userStats.totalInvestment.toLocaleString()}</span>
               </div>
               <div>
-                Number of Projects: <span className="font-bold">2</span>
+                Number of Projects: <span className="font-bold">{userStats.numberOfProjects}</span>
               </div>
             </div>
-            <div className="flex-1 flex space-x-4">
-              <button
-                className={`flex-1 rounded-lg p-4 font-bold ${
-                  selectedTab === "REAL ESTATE"
-                    ? "bg-lime-300 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                REAL ESTATE
-              </button>
-              <button
-                className={`flex-1 rounded-lg p-4 font-bold ${
-                  selectedTab === "ENERGY"
-                    ? "bg-lime-300 text-white"
-                    : "bg-gray-200 text-gray-700"
-                }`}
-              >
-                AGRICULTURE
-              </button>
-            </div>
+
+            {/* Project Tabs */}
+            {userInvestedProjects.length > 0 && (
+              <div className="bg-gray-100 rounded-lg p-4">
+                <div className="text-sm text-gray-600 mb-2">Your Invested Projects in {selectedTab}:</div>
+                <div className="flex flex-wrap gap-2">
+                  {userInvestedProjects
+                    .filter(project => project.category === selectedTab)
+                    .map((project) => (
+                      <button
+                        key={project.id}
+                        onClick={() => {
+                          setSelectedProjectId(project.id);
+                          setSelectedTab(project.category);
+                        }}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                          selectedProjectId === project.id
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        }`}
+                      >
+                        {project.title}
+                      </button>
+                    ))}
+                  {userInvestedProjects.filter(project => project.category === selectedTab).length === 0 && (
+                    <div className="text-sm text-gray-500">No investments in this category</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Project Overview */}
           <div className="bg-gray-200 rounded-xl text-gray-800 p-6 mb-6">
-            <div className="text-blue-700 font-bold mb-4">TOURISM: NYANGA PROJECT</div>
+            <div className="text-blue-700 font-bold mb-4">
+              {proposalData?.title || 'No Active Project'}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">INVESTORS</div>
-                <div className="text-3xl font-bold">250</div>
+                <div className="text-3xl font-bold">{proposalData?.investor_count || 0}</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">CAPITAL</div>
                 <div className="text-xl font-bold text-wrap">
-                  ${proposalData?.budget?.toLocaleString() || '0'}
+                  ${proposalData?.amount_raised?.toLocaleString() || '0'}
                 </div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
@@ -143,22 +299,24 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center">
               <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
-              <div className="text-4xl font-bold">4%</div>
+              <div className="text-4xl font-bold">{ownershipShare}%</div>
             </div>
             <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
-              <div className="text-xs text-gray-500 mb-2">GOAL $10,000</div>
+              <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
               <div className="flex items-center mb-2">
                 {[...Array(10)].map((_, i) => (
                   <div
                     key={i}
                     className={`w-4 h-8 mx-0.5 rounded ${
-                      i < 2 ? "bg-blue-700" : "bg-gray-300"
+                      i < Math.floor((proposalData?.amount_raised || 0) / (proposalData?.budget || 1) * 10) 
+                        ? "bg-blue-700" 
+                        : "bg-gray-300"
                     }`}
                   />
                 ))}
               </div>
               <div className="text-base font-bold">AMOUNT INVESTED</div>
-              <div className="text-xl font-bold text-blue-700">$2,000</div>
+              <div className="text-xl font-bold text-blue-700">${userStats.currentProjectInvestment.toLocaleString()}</div>
             </div>
           
 
@@ -177,9 +335,28 @@ const Dashboard = () => {
           </div>
           </div>
           {/* Existing Proposals List Section */}
-         <div className="mt-8">
-         <div className="text-blue-700 font-bold mb-4">ACTIVE PROJECTS</div>
-              <ProposalList showInvestButton={true} />
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-blue-700 font-bold">ACTIVE PROJECTS</div>
+              <div className="flex items-center space-x-2">
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={showOnlyInvested}
+                    onChange={(e) => setShowOnlyInvested(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span className="ml-3 text-sm font-medium text-gray-900">Show only my investments</span>
+                </label>
+              </div>
+            </div>
+            <ProposalList 
+              showInvestButton={true} 
+              category={selectedTab} 
+              showOnlyInvested={showOnlyInvested}
+              userId={user?.id}
+            />
           </div>
         </div>
       </div>

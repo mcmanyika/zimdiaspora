@@ -11,7 +11,7 @@ import { stripePromise } from '../../../lib/stripe/stripeClient';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-toastify';
 
-export default function ProposalList({ showInvestButton = true }) {
+export default function ProposalList({ showInvestButton = true, category = null, showOnlyInvested = false, userId = null }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,6 +23,8 @@ export default function ProposalList({ showInvestButton = true }) {
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
   const [selectedInvestmentProposal, setSelectedInvestmentProposal] = useState(null);
   const [user, setUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const proposalsPerPage = 5;
   const supabase = createClientComponentClient();
 
   const handleSort = (field) => {
@@ -56,36 +58,74 @@ export default function ProposalList({ showInvestButton = true }) {
       return 0;
     });
 
+  // Calculate pagination
+  const indexOfLastProposal = currentPage * proposalsPerPage;
+  const indexOfFirstProposal = indexOfLastProposal - proposalsPerPage;
+  const currentProposals = sortedProposals.slice(indexOfFirstProposal, indexOfLastProposal);
+  const totalPages = Math.ceil(sortedProposals.length / proposalsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   useEffect(() => {
     const fetchProposals = async () => {
       try {
-        setLoading(true);  // Ensure loading state is set before fetch
-        const { data, error } = await supabase
+        setLoading(true);
+        let query = supabase
           .from('proposals')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select(`
+            *,
+            investments (
+              amount,
+              investor_id
+            )
+          `)
+          .eq('status', 'active');
 
-        if (error) throw error;
-        
-        console.log('Response data:', data);
-        console.log('Number of proposals:', data?.length || 0);
-        console.log('Proposal data structure:', data[0]);
-        
-        if (!data || data.length === 0) {
-          console.log('No proposals found in the database');
+        if (category) {
+          query = query.eq('category', category);
         }
-        
-        setProposals(data || []);
-      } catch (err) {
-        console.error('Error fetching proposals:', err);
-        setError(err);
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error('Error fetching proposals:', error);
+          return;
+        }
+
+        let filteredProposals = data;
+
+        // Filter for user's investments if requested
+        if (showOnlyInvested && userId) {
+          filteredProposals = data.filter(proposal => 
+            proposal.investments.some(inv => 
+              inv.investor_id === userId && inv.amount > 0
+            )
+          );
+        }
+
+        // Calculate total raised for each proposal
+        const proposalsWithStats = filteredProposals.map(proposal => {
+          const totalRaised = proposal.investments.reduce((sum, inv) => sum + inv.amount, 0);
+          const investorCount = new Set(proposal.investments.map(inv => inv.investor_id)).size;
+          return {
+            ...proposal,
+            total_raised: totalRaised,
+            investor_count: investorCount
+          };
+        });
+
+        setProposals(proposalsWithStats);
+      } catch (error) {
+        console.error('Error:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProposals();
-  }, []);
+  }, [supabase, category, showOnlyInvested, userId, sortField, sortDirection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -278,7 +318,7 @@ export default function ProposalList({ showInvestButton = true }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {sortedProposals.map((proposal) => (
+          {currentProposals.map((proposal) => (
             <tr key={proposal.id} 
                 className="hover:bg-gray-100 transition-colors duration-150 cursor-pointer"
                 onClick={() => setSelectedProposal(proposal)}>
@@ -333,6 +373,35 @@ export default function ProposalList({ showInvestButton = true }) {
           ))}
         </tbody>
       </table>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center items-center space-x-2 mt-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className={`px-4 py-1 rounded ${
+            currentPage === 1
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-black text-white hover:bg-gray-800'
+          }`}
+        >
+          Previous
+        </button>
+        <span className="text-gray-600">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-1 rounded ${
+            currentPage === totalPages
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-black text-white hover:bg-gray-800'
+          }`}
+        >
+          Next
+        </button>
+      </div>
 
       {selectedProposal && (
         <ProposalDetailModal
