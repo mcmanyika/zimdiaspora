@@ -110,8 +110,14 @@ export default function ProposalList({ showInvestButton = true }) {
       return;
     }
 
+    if (proposal.status !== 'active') {
+      toast.error('This proposal is not currently accepting investments');
+      return;
+    }
+
     setSelectedInvestmentProposal(proposal);
     setShowInvestmentModal(true);
+    toast.info('Enter your investment amount and card details');
   };
 
   const handleInvestmentSubmit = async (investmentData) => {
@@ -121,7 +127,21 @@ export default function ProposalList({ showInvestButton = true }) {
         return;
       }
 
-      // Create investment record
+      toast.info('Processing your investment...');
+
+      // Get user's profile for the investment record
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        throw new Error(`Failed to fetch user profile: ${profileError.message}`);
+      }
+
+      // Create investment record with schema-compliant fields
       const { data: investment, error: investmentError } = await supabase
         .from('investments')
         .insert([
@@ -130,12 +150,19 @@ export default function ProposalList({ showInvestButton = true }) {
             proposal_id: selectedInvestmentProposal.id,
             amount: investmentData.amount,
             status: 'PENDING',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ])
         .select()
         .single();
 
-      if (investmentError) throw investmentError;
+      if (investmentError) {
+        console.error('Error creating investment:', investmentError);
+        throw new Error(`Failed to create investment record: ${investmentError.message}`);
+      }
+
+      toast.info('Creating payment intent...');
 
       // Create payment intent
       const response = await fetch('/api/create-payment-intent', {
@@ -146,30 +173,67 @@ export default function ProposalList({ showInvestButton = true }) {
         body: JSON.stringify({
           amount: investmentData.amount,
           proposalId: selectedInvestmentProposal.id,
+          investmentId: investment.id,
+          investorName: profile?.full_name || 'Anonymous Investor',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create payment intent');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Payment intent creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
+        throw new Error(`Failed to initialize payment: ${errorData.message || response.statusText}`);
       }
 
       const { clientSecret } = await response.json();
 
+      toast.info('Updating investment record...');
+
       // Update investment with payment intent ID
       const { error: updateError } = await supabase
         .from('investments')
-        .update({ stripe_payment_intent_id: clientSecret })
+        .update({ 
+          stripe_payment_intent_id: clientSecret,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', investment.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating investment:', updateError);
+        throw new Error(`Failed to update investment record: ${updateError.message}`);
+      }
 
       setShowInvestmentModal(false);
       setSelectedInvestmentProposal(null);
-      toast.success('Investment initiated successfully');
+      
+      // Show detailed success message
+      const formattedAmount = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(investmentData.amount);
+      
+      toast.success(
+        `Investment of ${formattedAmount} in "${selectedInvestmentProposal.title}" initiated successfully! Processing your payment...`
+      );
       
     } catch (err) {
-      console.error('Error submitting investment:', err);
-      toast.error('Failed to process investment');
+      console.error('Error submitting investment:', {
+        message: err.message,
+        stack: err.stack,
+        error: err
+      });
+      
+      // Show more detailed error message to user
+      const errorMessage = err.message || 'An unexpected error occurred';
+      toast.error(`Investment failed: ${errorMessage}`);
+      
+      // If there's a specific error about the payment intent, show a more helpful message
+      if (errorMessage.includes('payment intent')) {
+        toast.error('Please try again or contact support if the problem persists');
+      }
     }
   };
 

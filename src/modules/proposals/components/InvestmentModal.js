@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const stripe = useStripe();
@@ -8,6 +9,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const supabase = createClientComponentClient();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,37 +17,68 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
     setError(null);
 
     if (!stripe || !elements) {
-      setError("Stripe hasn't been initialized");
+      toast.error('Payment system is not initialized. Please try again.');
+      setLoading(false);
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      toast.error('Please enter a valid investment amount');
       setLoading(false);
       return;
     }
 
     try {
-      // Get the card element
-      const cardElement = elements.getElement(CardElement);
-      
-      // Create payment method
-      const { error: paymentMethodError, paymentMethod } = await stripe.createPaymentMethod({
+      toast.info('Validating card details...');
+      const { error: cardError } = await stripe.createPaymentMethod({
         type: 'card',
-        card: cardElement,
+        card: elements.getElement(CardElement),
       });
 
-      if (paymentMethodError) {
-        throw new Error(paymentMethodError.message);
+      if (cardError) {
+        console.error('Card validation error:', cardError);
+        throw new Error(cardError.message);
       }
 
-      // Submit investment with payment method
-      await onSubmit({
-        amount: parseFloat(amount),
-        paymentMethodId: paymentMethod.id,
+      toast.info('Processing payment...');
+      const { error: paymentError } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement),
+        },
       });
 
-      toast.success('Payment processed successfully');
+      if (paymentError) {
+        console.error('Payment error:', paymentError);
+        throw new Error(paymentError.message);
+      }
+
+      // Confirm payment on the server
+      const response = await fetch('/api/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentIntentId: clientSecret,
+          proposalId: proposal.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to confirm payment');
+      }
+
+      const { investmentId } = await response.json();
+      
+      // Close modal and redirect to success page
       onClose();
+      window.location.href = `/payment/success?investmentId=${investmentId}&proposalId=${proposal.id}`;
+      
     } catch (err) {
       console.error('Payment error:', err);
       setError(err.message);
-      toast.error('Payment failed: ' + err.message);
+      toast.error(`Payment failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
