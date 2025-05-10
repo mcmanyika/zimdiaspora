@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-
+import { withAuth } from '../../utils/withAuth'
 const tabs = ["REAL ESTATE", "TOURISM", "FARMING", "ENERGY"];
 
 const Dashboard = () => {
@@ -144,4 +144,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default withAuth(Dashboard); 
