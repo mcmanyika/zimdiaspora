@@ -3,21 +3,15 @@ import { usePathname, useRouter } from 'next/navigation'
 import { 
   HomeIcon, 
   UserIcon,
-  CurrencyDollarIcon,
   DocumentTextIcon,
-  ClipboardDocumentListIcon,
-  BookOpenIcon,
   ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Portfolio', href: '/portfolio', icon: DocumentTextIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
-  { name: 'Investments Overview', href: '/investments', icon: CurrencyDollarIcon },
-  { name: 'My Portfolio', href: '/portfolio', icon: DocumentTextIcon },
-  { name: 'Projects Updates', href: '/projects', icon: ClipboardDocumentListIcon },
-  { name: 'Resources Library', href: '/resources', icon: BookOpenIcon },
 ]
 
 export default function Sidebar() {
