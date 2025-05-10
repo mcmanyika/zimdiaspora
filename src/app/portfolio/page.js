@@ -25,6 +25,8 @@ function Dashboard() {
         recentUpdates: [],
         upcomingEvents: [],
         totalUsers: 0,
+        recentInvestments: [],
+        investmentHistory: {}
     });
 
     const supabase = createClientComponentClient();
@@ -32,50 +34,56 @@ function Dashboard() {
     useEffect(() => {
         async function fetchDashboardData() {
             setIsLoading(true);
-            setError(null);
             try {
-                const [
-                    { data: proposals },
-                    { data: investments },
-                    { count: activeProposalCount },
-                    { count: pendingProposalCount },
-                    { count: totalProposalCount },
-                    { data: updates },
-                    { data: users }
-                ] = await Promise.all([
-                    supabase.from('proposals').select('budget, status'),
-                    supabase.from('investments').select('amount'),
-                    supabase.from('proposals').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-                    supabase.from('proposals').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-                    supabase.from('proposals').select('*', { count: 'exact', head: true }),
-                    supabase.from('project_updates').select('*').order('created_at', { ascending: false }).limit(5),
-                    supabase.from('profiles').select('*')
-                ]);
+                // Fetch recent investments
+                const { data: recentInvestments, error: investmentsError } = await supabase
+                    .from('investments')
+                    .select(`
+                        *,
+                        proposal:proposals(title),
+                        investor:profiles(full_name)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
 
-                // Calculate investments by status
-                const investmentsByStatus = proposals?.reduce((acc, proposal) => {
-                    const status = proposal.status?.toLowerCase() || 'inactive';
-                    acc[status] = (acc[status] || 0) + (proposal.budget || 0);
+                if (investmentsError) throw investmentsError;
+
+                // Fetch investment history per proposal
+                const { data: proposals, error: proposalsError } = await supabase
+                    .from('proposals')
+                    .select(`
+                        id,
+                        title,
+                        investments(
+                            amount,
+                            status,
+                            created_at,
+                            investor_id
+                        )
+                    `);
+
+                if (proposalsError) throw proposalsError;
+
+                // Calculate investment history per proposal, only for proposals with investments
+                const investmentHistory = proposals.reduce((acc, proposal) => {
+                    // Only include proposals that have investments
+                    if (proposal.investments && proposal.investments.length > 0) {
+                        acc[proposal.id] = {
+                            title: proposal.title,
+                            totalInvested: proposal.investments.reduce((sum, inv) => sum + inv.amount, 0),
+                            investmentCount: proposal.investments.length,
+                            investments: proposal.investments
+                        };
+                    }
                     return acc;
-                }, { active: 0, pending: 0, inactive: 0 });
+                }, {});
 
-                // Count users by gender (only Male and Female)
-                const genderCounts = {
-                    male: users?.filter(user => user.gender?.toLowerCase() === 'male').length || 0,
-                    female: users?.filter(user => user.gender?.toLowerCase() === 'female').length || 0
-                };
+                setDashboardData(prev => ({
+                    ...prev,
+                    recentInvestments,
+                    investmentHistory
+                }));
 
-                setDashboardData({
-                    investmentsByStatus,
-                    investmentTotal: investments?.reduce((sum, inv) => sum + inv.amount, 0) || 0,
-                    activeProposals: activeProposalCount || 0,
-                    pendingProposals: pendingProposalCount || 0,
-                    totalProposals: totalProposalCount || 0,
-                    recentUpdates: updates || [],
-                    upcomingEvents: [],
-                    totalUsers: users?.length || 0,
-                    usersByGender: genderCounts
-                });
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
                 setError('Failed to load dashboard data');
@@ -102,14 +110,78 @@ function Dashboard() {
     }
 
     return (
-      <Admin>
-      <div className="p-6 relative">
-        {/* Proposals List Section */}
-        <div className="mt-8">
-          <ProposalList showInvestButton={true} />
-        </div>
-      </div>
-      </Admin>
-    )
-  }
-  export default withAuth(Dashboard);
+        <Admin>
+            <div className="p-6 relative">
+                {/* Recent Investments Section */}
+                <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-4">Recent Investments</h2>
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proposal</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {dashboardData.recentInvestments.map((investment) => (
+                                    <tr key={investment.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap">{investment.investor?.full_name || 'Anonymous'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">{investment.proposal?.title}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">${investment.amount.toLocaleString()}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                investment.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                                                investment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-red-100 text-red-800'
+                                            }`}>
+                                                {investment.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {new Date(investment.created_at).toLocaleDateString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Investment History per Proposal */}
+                <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-4">Investment History per Proposal</h2>
+                    {Object.keys(dashboardData.investmentHistory).length === 0 ? (
+                        <div className="bg-white rounded-lg shadow p-6 text-center">
+                            <p className="text-gray-500">No investment history available.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Object.entries(dashboardData.investmentHistory).map(([proposalId, data]) => (
+                                <div key={proposalId} className="bg-white rounded-lg shadow p-4">
+                                    <h3 className="font-semibold mb-2">{data.title}</h3>
+                                    <p className="text-sm text-gray-600">Total Invested: ${data.totalInvested.toLocaleString()}</p>
+                                    <p className="text-sm text-gray-600">Investment Count: {data.investmentCount}</p>
+                                    <div className="mt-2">
+                                        <h4 className="text-sm font-medium mb-1">Recent Investments:</h4>
+                                        <ul className="text-sm text-gray-600">
+                                            {data.investments.slice(0, 3).map((inv, index) => (
+                                                <li key={index}>
+                                                    ${inv.amount.toLocaleString()} - {new Date(inv.created_at).toLocaleDateString()}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Admin>
+    );
+}
+export default withAuth(Dashboard);

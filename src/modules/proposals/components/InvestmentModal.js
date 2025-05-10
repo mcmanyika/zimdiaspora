@@ -113,6 +113,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
       }
 
       // Confirm payment on the server
+      const { data: { user } } = await supabase.auth.getUser();
       const confirmResponse = await fetch('/api/confirm-payment', {
         method: 'POST',
         headers: {
@@ -121,6 +122,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         body: JSON.stringify({
           paymentIntentId: paymentIntentId,
           proposalId: proposal.id,
+          investorId: user.id,
         }),
       });
 
@@ -135,7 +137,6 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
       }
 
       // Get user's profile for the success message
-      const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase
         .from('profiles')
         .select('full_name, email')

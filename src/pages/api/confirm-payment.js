@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { paymentIntentId, proposalId } = req.body;
+    const { paymentIntentId, proposalId, investorId } = req.body;
 
     if (!paymentIntentId || !proposalId) {
       console.error('Missing required parameters:', { paymentIntentId, proposalId });
@@ -109,6 +109,7 @@ export default async function handler(req, res) {
           .from('investments')
           .insert({
             proposal_id: proposalId,
+            investor_id: investorId,
             amount: paymentIntent.amount / 100, // Convert from cents to dollars
             status: 'COMPLETED',
             stripe_payment_intent_id: paymentIntentId,

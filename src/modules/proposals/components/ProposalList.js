@@ -36,23 +36,25 @@ export default function ProposalList({ showInvestButton = true }) {
     }
   };
 
-  const sortedProposals = [...proposals].sort((a, b) => {
-    let compareA = a[sortField];
-    let compareB = b[sortField];
+  const sortedProposals = [...proposals]
+    .filter(proposal => proposal.status === 'active')
+    .sort((a, b) => {
+      let compareA = a[sortField];
+      let compareB = b[sortField];
 
-    // Handle special cases for date and number fields
-    if (sortField === 'deadline') {
-      compareA = new Date(compareA);
-      compareB = new Date(compareB);
-    } else if (sortField === 'budget') {
-      compareA = Number(compareA);
-      compareB = Number(compareB);
-    }
+      // Handle special cases for date and number fields
+      if (sortField === 'deadline') {
+        compareA = new Date(compareA);
+        compareB = new Date(compareB);
+      } else if (sortField === 'budget') {
+        compareA = Number(compareA);
+        compareB = Number(compareB);
+      }
 
-    if (compareA < compareB) return sortDirection === 'asc' ? -1 : 1;
-    if (compareA > compareB) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+      if (compareA < compareB) return sortDirection === 'asc' ? -1 : 1;
+      if (compareA > compareB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   useEffect(() => {
     const fetchProposals = async () => {

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
+import ProposalList from "../../modules/proposals/components/ProposalList";
 const tabs = ["REAL ESTATE"];
 
 const Dashboard = () => {
@@ -174,6 +175,11 @@ const Dashboard = () => {
               </select>
             ))}
           </div>
+          </div>
+          {/* Existing Proposals List Section */}
+         <div className="mt-8">
+         <div className="text-blue-700 font-bold mb-4">ACTIVE PROJECTS</div>
+              <ProposalList showInvestButton={true} />
           </div>
         </div>
       </div>

@@ -77,7 +77,9 @@ function Admin({ children }) {
       {/* Main Content */}
       <main className="flex-1 pb-16 md:pb-0 w-full transition-all duration-300 ease-in-out">
         <Header />
-        {children}
+        <div className="overflow-auto h-[calc(100vh-4rem)]">
+          {children}
+        </div>
       </main>
     </div>
   )
