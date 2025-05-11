@@ -1,5 +1,6 @@
+'use client'
 import React from 'react'
-import withAuth from '@/app/account/utils/withAuth'
+import withAuth from '../../utils/withAuth'
 import Admin from "../../components/layout/Admin";
 function page() {
   return (
