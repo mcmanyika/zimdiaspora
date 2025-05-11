@@ -235,7 +235,6 @@ const Dashboard = () => {
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-100 rounded-lg p-4">
-              <div className="font-bold">{user?.user_metadata?.full_name || ''}</div>
               <div>
                 Total Investment: <span className="font-bold">${userStats.totalInvestment.toLocaleString()}</span>
               </div>
@@ -286,7 +285,7 @@ const Dashboard = () => {
                 <div className="text-3xl font-bold">{proposalData?.investor_count || 0}</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-xs text-gray-500">CAPITAL</div>
+                <div className="text-xs text-gray-500">CAPITAL RAISED</div>
                 <div className="text-xl font-bold text-wrap">
                   ${proposalData?.amount_raised?.toLocaleString() || '0'}
                 </div>
