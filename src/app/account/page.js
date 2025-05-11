@@ -241,8 +241,7 @@ const Dashboard = () => {
               <div>
                 Number of Projects: <span className="font-bold">{userStats.numberOfProjects}</span>
               </div>
-              {/* Project Tabs */}
-            {userInvestedProjects.length > 0 && (
+              {userInvestedProjects.length > 0 && (
               <div className="pt-4">
                 <div className="text-sm text-gray-600 mb-2">Your Invested Projects in {selectedTab}:</div>
                 <div className="flex flex-wrap gap-2">
@@ -272,9 +271,10 @@ const Dashboard = () => {
             )}
             </div>
 
-            
-            
-          <YouTubeVideo  />
+            {/* Youtube Video */}
+              <div className="bg-gray-100 rounded-lg p-4">
+                <YouTubeVideo />
+              </div>
           </div>
 
           {/* Project Overview */}
@@ -323,7 +323,27 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
-                 
+                  <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
+                  <div className="flex items-center mb-2">
+                    {[...Array(10)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-4 h-8 mx-0.5 rounded ${
+                          i < Math.floor((proposalData?.amount_raised || 0) / (proposalData?.budget || 1) * 10) 
+                            ? "bg-blue-700" 
+                            : "bg-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-base font-bold">AMOUNT INVESTED</div>
+                  <div className="text-xl font-bold text-blue-700">
+                    {isLoading ? (
+                      <div className="animate-pulse bg-gray-300 h-8 w-32 mx-auto rounded"></div>
+                    ) : (
+                      `$${userStats.currentProjectInvestment.toLocaleString()}`
+                    )}
+                  </div>
                 </div>
               </>
             ) : (
