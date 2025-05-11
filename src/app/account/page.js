@@ -234,17 +234,17 @@ const Dashboard = () => {
 
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-100 rounded-lg p-4">
-              <div>
+            <div className="bg-gray-100 rounded-lg p-4 flex flex-col justify-center items-center h-full">
+              <div className="text-center">
                 Total Investment: <span className="font-bold">${userStats.totalInvestment.toLocaleString()}</span>
               </div>
-              <div>
+              <div className="text-center">
                 Number of Projects: <span className="font-bold">{userStats.numberOfProjects}</span>
               </div>
               {userInvestedProjects.length > 0 && (
-              <div className="pt-4">
+              <div className="pt-4 text-center">
                 <div className="text-sm text-gray-600 mb-2">Your Invested Projects in {selectedTab}:</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   {userInvestedProjects
                     .filter(project => project.category === selectedTab)
                     .map((project) => (
