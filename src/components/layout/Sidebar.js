@@ -4,15 +4,17 @@ import {
   HomeIcon, 
   UserIcon,
   DocumentTextIcon,
-  ArrowLeftOnRectangleIcon
+  ArrowLeftOnRectangleIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
-  { name: 'Portfolio', href: '/portfolio', icon: DocumentTextIcon },
+  { name: 'Portfolio', href: '/portfolio', icon: BriefcaseIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
+  { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
 ]
 
 export default function Sidebar() {

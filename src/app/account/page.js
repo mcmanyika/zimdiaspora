@@ -6,6 +6,8 @@ import { withAuth } from '../../utils/withAuth'
 import ProposalList from "../../modules/proposals/components/ProposalList";
 import YouTubeVideo from "./utils/youtube";
 import LaunchTimeline from "../../modules/timeline/components/LaunchTimeline";
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 const CATEGORIES = ["REAL ESTATE", "AGRICULTURE", "TOURISM", "ENERGY"];
 
 const Dashboard = () => {
@@ -23,7 +25,15 @@ const Dashboard = () => {
     currentProjectInvestment: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
   const supabase = createClientComponentClient();
+  const documentCategories = [
+    { id: 'title_deeds', label: 'Title Deeds' },
+    { id: 'bank_statements', label: 'Bank Statements' },
+    { id: 'letters', label: 'Letters / Documents' }
+  ];
+  const router = useRouter();
 
   useEffect(() => {
     const getUser = async () => {
@@ -204,6 +214,62 @@ const Dashboard = () => {
     fetchProposalData();
   }, [supabase, selectedTab, user, selectedProjectId]);
 
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setDocuments(data || []);
+      } catch (error) {
+        console.error('Error fetching documents:', error);
+      }
+    };
+
+    fetchDocuments();
+  }, [user, supabase]);
+
+  const handleDocumentAction = async (document, action) => {
+    try {
+      if (action === 'download') {
+        const { data, error } = await supabase.storage
+          .from('project-documents')
+          .download(document.file_path);
+
+        if (error) throw error;
+
+        // Create download link
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = document.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else if (action === 'view') {
+        const { data, error } = await supabase.storage
+          .from('project-documents')
+          .download(document.file_path);
+
+        if (error) throw error;
+
+        setSelectedDocument({
+          ...document,
+          data
+        });
+      }
+    } catch (error) {
+      console.error('Error handling document:', error);
+    }
+  };
+
   // Calculate ownership share percentage
   const ownershipShare = useMemo(() => {
     if (!proposalData?.amount_raised || !userStats.currentProjectInvestment) return 0;
@@ -229,70 +295,118 @@ const Dashboard = () => {
   return (
     <Admin>
       <div className="min-h-screen bg-gray-100 py-10 px-2">
-          <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
-
-        {/* Category Tabs */}
-        <div className="flex flex-col md:flex-row justify-between mb-6 gap-2">
-          <div className="flex flex-col md:flex-row gap-2">
-            {CATEGORIES.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setSelectedTab(tab);
-                  setSelectedProjectId(null);
-                }}
-                className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
-                  selectedTab === tab
-                    ? "bg-lime-300 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-blue-100"
-                }`}
+        {/* Document Viewer Modal */}
+        <AnimatePresence>
+          {selectedDocument && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-50"
+              onClick={() => setSelectedDocument(null)}
+            >
+              <motion.div 
+                className="fixed inset-y-0 right-0 w-1/2 min-h-screen bg-white shadow-xl overflow-y-auto"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ duration: 0.5, ease: 'easeInOut' }}
+                style={{ width: isMobile ? '100%' : '50%' }}
+                onClick={e => e.stopPropagation()}
               >
-                {tab}
-              </button>
-            ))}
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-4 border-b pb-4">
+                    <h2 className="text-2xl font-semibold text-gray-900">{selectedDocument.file_name}</h2>
+                    <button
+                      onClick={() => setSelectedDocument(null)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="mt-4">
+                    {selectedDocument.file_type.startsWith('image/') ? (
+                      <img 
+                        src={URL.createObjectURL(selectedDocument.data)} 
+                        alt={selectedDocument.file_name}
+                        className="max-w-full h-auto"
+                      />
+                    ) : (
+                      <iframe
+                        src={URL.createObjectURL(selectedDocument.data)}
+                        className="w-full h-[80vh]"
+                        title={selectedDocument.file_name}
+                      />
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
+          {/* Category Tabs */}
+          <div className="flex flex-col md:flex-row justify-between mb-6 gap-2">
+            <div className="flex flex-col md:flex-row gap-2">
+              {CATEGORIES.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => {
+                    setSelectedTab(tab);
+                    setSelectedProjectId(null);
+                  }}
+                  className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
+                    selectedTab === tab
+                      ? "bg-lime-300 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-blue-100"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="border border-gray-400 hover:bg-lime-300 hover:border-white hover:text-white rounded-md px-4 py-2"
+            >
+              Track Progress To Launch
+            </button>
           </div>
 
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="border border-gray-400 hover:bg-lime-300 hover:border-white hover:text-white rounded-md px-4 py-2"
-          >
-            Track Progress To Launch
-          </button>
-        </div>
-
-        {/* Sliding Modal */}
-        <div 
-          className={`fixed top-0 right-0 h-full ${
-            isMobile ? 'w-full' : 'w-1/2'
-          } bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
-            isModalOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">&nbsp;</h2>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 overflow-y-auto h-[80vh]">
-              <LaunchTimeline />
-            </div>
-          </div>
-        </div>
-
-        {/* Overlay */}
-        {isModalOpen && (
+          {/* Sliding Modal */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            onClick={() => setIsModalOpen(false)}
-          />
-        )}
+            className={`fixed top-0 right-0 h-full ${
+              isMobile ? 'w-full' : 'w-1/2'
+            } bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
+              isModalOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">&nbsp;</h2>
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="bg-gray-100space-y-4 overflow-y-auto h-[80vh]">
+                <LaunchTimeline />
+              </div>
+            </div>
+          </div>
+
+          {/* Overlay */}
+          {isModalOpen && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50 z-40"
+              onClick={() => setIsModalOpen(false)}
+            />
+          )}
  
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -375,7 +489,7 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             {proposalData && userStats.currentProjectInvestment > 0 ? (
               <>
-                <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center flex flex-col justify-center items-center min-h-[200px]">
+                <div className="flex-1 bg-lime-300 rounded-lg p-8 text-center flex flex-col justify-center items-center min-h-[200px]">
                   <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
                   <div className="text-4xl font-bold">
                     {isLoading ? (
@@ -421,15 +535,14 @@ const Dashboard = () => {
 
             {/* Documents */}
             <div className="flex-1 gap-4">
-              {["Title Deeds", "Bank Statements", "Letters / Documents"].map((label) => (
-                <select
-                  key={label}
-                  className="w-full p-4 m-2 rounded-lg bg-gray-400 text-white font-bold text-lg"
+              {documentCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => router.push('/documents')}
+                  className="w-full p-4 m-2 rounded-lg bg-gray-400 text-white font-bold text-lg hover:bg-gray-500 transition-colors"
                 >
-                  <option>{label}</option>
-                  <option>Download</option>
-                  <option>View</option>
-                </select>
+                  {category.label}
+                </button>
               ))}
             </div>
           </div>
