@@ -313,7 +313,7 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             {proposalData && userStats.currentProjectInvestment > 0 ? (
               <>
-                <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center">
+                <div className="flex-1 bg-gray-400 rounded-lg p-8 text-center flex flex-col justify-center items-center min-h-[200px]">
                   <div className="text-sm text-gray-700 mb-2">OWNERSHIP SHARE</div>
                   <div className="text-4xl font-bold">
                     {isLoading ? (
@@ -323,9 +323,9 @@ const Dashboard = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center">
+                <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex flex-col items-center justify-center min-h-[200px]">
                   <div className="text-xs text-gray-500 mb-2">GOAL ${proposalData?.budget?.toLocaleString() || '0'}</div>
-                  <div className="flex items-center mb-2">
+                  <div className="flex items-center justify-center mb-2">
                     {[...Array(10)].map((_, i) => (
                       <div
                         key={i}
