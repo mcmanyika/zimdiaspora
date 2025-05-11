@@ -89,6 +89,7 @@ export default function LaunchTimeline() {
                          milestone.status === 'in-progress' ? 'In Progress' :
                          'Upcoming'}
                       </div>
+                      <div className="text-sm text-gray-500 mt-2">{milestone.date.split('T')[0]}</div>
                     </div>
                   </div>
                 ) : (
@@ -118,6 +119,7 @@ export default function LaunchTimeline() {
                          milestone.status === 'in-progress' ? 'In Progress' :
                          'Upcoming'}
                       </p>
+                      <div className="text-sm text-gray-500 mt-2">{milestone.date.split('T')[0]}</div>
                     </div>
                   </div>
                 ) : (
