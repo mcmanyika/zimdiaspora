@@ -13,31 +13,71 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, proposalId } = req.body;
+    // Log the incoming request
+    console.log('Received payment intent request:', {
+      body: req.body,
+      headers: req.headers
+    });
 
-    if (!amount || !proposalId) {
-      console.error('Missing required parameters:', { amount, proposalId });
-      return res.status(400).json({ message: 'Missing required parameters' });
+    const { amount, proposalId, currency = 'usd' } = req.body;
+
+    // Validate input parameters
+    if (!amount || isNaN(amount) || amount <= 0) {
+      console.error('Invalid amount:', amount);
+      return res.status(400).json({ 
+        message: 'Invalid amount provided',
+        details: { amount }
+      });
     }
 
-    console.log('Creating payment intent for amount:', amount);
+    if (!proposalId) {
+      console.error('Missing proposalId');
+      return res.status(400).json({ 
+        message: 'Missing proposalId',
+        details: { proposalId }
+      });
+    }
 
-    // Create a PaymentIntent with the specified amount
+    // Validate currency
+    const validCurrencies = ['usd', 'eur', 'gbp', 'cad', 'aud'];
+    const normalizedCurrency = currency.toLowerCase();
+    if (!validCurrencies.includes(normalizedCurrency)) {
+      console.error('Invalid currency:', currency);
+      return res.status(400).json({ 
+        message: 'Invalid currency provided',
+        details: { 
+          currency,
+          supportedCurrencies: validCurrencies 
+        }
+      });
+    }
+
+    console.log('Creating payment intent with params:', {
+      amount,
+      currency: normalizedCurrency,
+      proposalId
+    });
+
+    // Create a PaymentIntent with the specified amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd',
+      currency: normalizedCurrency,
       metadata: {
         proposalId,
       },
       automatic_payment_methods: {
         enabled: true,
       },
+      capture_method: 'automatic',
+      confirm: false,
+      setup_future_usage: 'off_session',
     });
 
-    console.log('Payment intent created:', {
+    console.log('Payment intent created successfully:', {
       id: paymentIntent.id,
       status: paymentIntent.status,
       amount: paymentIntent.amount,
+      currency: paymentIntent.currency,
     });
 
     // Return both the client secret and payment intent ID
@@ -46,10 +86,24 @@ export default async function handler(req, res) {
       paymentIntentId: paymentIntent.id,
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    // Enhanced error logging
+    console.error('Error creating payment intent:', {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      stack: error.stack,
+      raw: error
+    });
+
+    // Return a more detailed error response
     return res.status(500).json({ 
       message: 'Error creating payment intent',
-      error: error.message 
+      error: {
+        message: error.message,
+        type: error.type,
+        code: error.code
+      },
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 } 

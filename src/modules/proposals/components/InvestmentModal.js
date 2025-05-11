@@ -10,7 +10,38 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [investmentDetails, setInvestmentDetails] = useState(null);
+  const [currency, setCurrency] = useState('usd');
   const supabase = createClientComponentClient();
+
+  // Supported currencies
+  const supportedCurrencies = [
+    { code: 'usd', symbol: '$', name: 'US Dollar' },
+    { code: 'eur', symbol: '€', name: 'Euro' },
+    { code: 'gbp', symbol: '£', name: 'British Pound' },
+    { code: 'cad', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'aud', symbol: 'A$', name: 'Australian Dollar' },
+  ];
+
+  // Error messages for common international card issues
+  const getErrorMessage = (error) => {
+    if (error.type === 'card_error') {
+      switch (error.code) {
+        case 'card_not_supported':
+          return 'This card type is not supported. Please try a different card.';
+        case 'currency_not_supported':
+          return 'This card does not support the selected currency. Please try a different card or currency.';
+        case 'insufficient_funds':
+          return 'Your card has insufficient funds. Please try a different card or amount.';
+        case 'declined':
+          return 'Your card was declined. Please check with your bank or try a different card.';
+        case 'processing_error':
+          return 'There was an error processing your card. Please try again or use a different card.';
+        default:
+          return error.message;
+      }
+    }
+    return error.message;
+  };
 
   // Subscribe to real-time updates for the proposal
   useEffect(() => {
@@ -72,14 +103,33 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         body: JSON.stringify({
           amount: parseFloat(amount),
           proposalId: proposal.id,
+          currency: currency,
         }),
       });
 
-      const responseData = await response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (jsonError) {
+        console.error('Failed to parse response:', jsonError);
+        throw new Error('Invalid response from server');
+      }
 
       if (!response.ok) {
-        console.error('Payment intent creation failed:', responseData);
-        throw new Error(responseData.message || 'Failed to create payment intent');
+        console.error('Payment intent creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData
+        });
+        
+        // Handle specific error cases
+        if (response.status === 400) {
+          throw new Error(responseData.message || 'Invalid payment details');
+        } else if (response.status === 500) {
+          throw new Error(responseData.error?.message || 'Server error occurred');
+        } else {
+          throw new Error(responseData.message || 'Failed to create payment intent');
+        }
       }
 
       const { clientSecret, paymentIntentId } = responseData;
@@ -97,7 +147,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
 
       if (cardError) {
         console.error('Card validation error:', cardError);
-        throw new Error(cardError.message);
+        throw new Error(getErrorMessage(cardError));
       }
 
       toast.info('Processing payment...');
@@ -231,8 +281,8 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         message: err.message,
         error: err
       });
-      setError(err.message);
-      toast.error(`Payment failed: ${err.message}`, {
+      setError(getErrorMessage(err));
+      toast.error(`Payment failed: ${getErrorMessage(err)}`, {
         position: "bottom-center",
         autoClose: 5000,
         hideProgressBar: false,
@@ -252,17 +302,30 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Investment Amount (USD)
+              Investment Amount
             </label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 px-4 py-2 block w-full rounded-md border border-black shadow-sm focus:border-gray-500 focus:ring-gray-500"
-              required
-              min="1"
-              step="0.01"
-            />
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-gray-500 text-sm"
+              >
+                {supportedCurrencies.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="flex-1 px-4 py-2 block w-full rounded-r-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                required
+                min="1"
+                step="0.01"
+              />
+            </div>
           </div>
 
           <div>
@@ -271,7 +334,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
             </label>
             <div className="p-3 border rounded-md">
               <CardElement
-              className='px-4 py-2'
+              className='px-4 p-2'
                 options={{
                   style: {
                     base: {
@@ -288,10 +351,15 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
                 }}
               />
             </div>
+            <p className="mt-2 text-sm text-gray-500">
+              We accept most international cards. If your card is declined, please try a different card or contact your bank.
+            </p>
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm">{error}</div>
+            <div className="text-red-600 text-sm p-3 bg-red-50 rounded-md">
+              {error}
+            </div>
           )}
 
           <div className="flex justify-end gap-2">

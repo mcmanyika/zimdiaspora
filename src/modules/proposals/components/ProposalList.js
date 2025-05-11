@@ -27,6 +27,14 @@ export default function ProposalList({ showInvestButton = true, category = null,
   const proposalsPerPage = 5;
   const supabase = createClientComponentClient();
 
+  // Format currency based on user's locale
+  const formatCurrency = (amount, currency = 'USD') => {
+    return new Intl.NumberFormat(navigator.language, {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   const handleSort = (field) => {
     if (sortField === field) {
       // If clicking the same field, toggle direction
@@ -334,7 +342,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
               )}
               <td className="px-6 py-4 whitespace-nowrap cursor-pointer text-gray-900"
                   onClick={() => setSelectedProposal(proposal)}>
-                USD {proposal.budget?.toLocaleString() || '0'}
+                {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
               </td>
               <td className="px-6 py-4 whitespace-nowrap p-2 cursor-pointer"
                   onClick={() => setSelectedProposal(proposal)}>
@@ -356,6 +364,9 @@ export default function ProposalList({ showInvestButton = true, category = null,
                     <span className="text-sm ml-2 whitespace-nowrap text-gray-900">
                       {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
                     </span>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')} raised
                   </div>
                 </div>
               </td>
