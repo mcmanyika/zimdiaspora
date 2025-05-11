@@ -376,7 +376,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
                     onClick={(e) => handleInvestClick(proposal, e)}
                     className="px-4 py-1 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
                   >
-                    Invest
+                    Pay Now &gt;&gt;
                   </button>
                 )}
               </td>
