@@ -297,7 +297,7 @@ const Dashboard = () => {
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-100 rounded-lg p-2 flex flex-col justify-center items-center h-full">
-              <h1 className="text-2xl font-bold mb-2">Your Investment Summary</h1>
+              <h1 className="text-2xl font-bold mb-2 uppercase">Your Investment Summary</h1>
               <div className="text-center">
                 Total Investment: <span className="font-bold">${userStats.totalInvestment.toLocaleString()}</span>
               </div>
