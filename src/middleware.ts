@@ -6,16 +6,25 @@ export async function middleware(req: NextRequest) {
     const res = NextResponse.next()
     const supabase = createMiddlewareClient({ req, res })
 
-    const { data: { session } } = await supabase.auth.getSession()
+    // Get the current pathname
+    const path = req.nextUrl.pathname
 
-    if (!session && req.nextUrl.pathname !== '/auth/signin') {
-        return NextResponse.redirect(new URL('/auth/signin', req.url))
+    // Always allow access to auth-related paths and static assets
+    if (path.startsWith('/auth/') ||
+        path.startsWith('/_next') ||
+        path.startsWith('/api') ||
+        path === '/') {
+        return res
     }
 
-    if (session && req.nextUrl.pathname === '/auth/signin') {
-        const response = NextResponse.redirect(new URL('/', req.url))
-        response.headers.set('Cache-Control', 'no-store, must-revalidate, max-age=0')
-        return response
+    // For all other routes, check session but don't redirect immediately
+    const { data: { session } } = await supabase.auth.getSession()
+
+    // If no session and trying to access protected route, redirect to signin
+    if (!session && !path.startsWith('/auth/')) {
+        const redirectUrl = new URL('/auth/signin', req.url)
+        redirectUrl.searchParams.set('redirectedFrom', path)
+        return NextResponse.redirect(redirectUrl)
     }
 
     return res
@@ -23,6 +32,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|auth/signin).*)',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
     ],
 } 

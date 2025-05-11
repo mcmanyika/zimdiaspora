@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Auth } from '@supabase/auth-ui-react'
-export default function SignIn() {
+
+function SignIn() {
   const supabase = createClientComponentClient()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -74,7 +74,7 @@ export default function SignIn() {
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p>Loading...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     )
   }
@@ -126,21 +126,8 @@ export default function SignIn() {
         >
           {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
         </button>
-
-        {/* <div className="text-center text-gray-500 text-sm">OR</div>
-        
-        <Auth
-          supabaseClient={supabase}
-          providers={['google']}
-          onlyThirdPartyProviders
-          redirectTo={process.env.NEXT_PUBLIC_SITE_URL 
-            ? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
-            : `${window.location.origin}/auth/callback`}
-          onAuthSuccess={() => {
-            router.refresh()
-          }}
-        /> */}
       </div>
     </div>
   )
 }
+export default SignIn;

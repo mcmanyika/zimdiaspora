@@ -21,7 +21,7 @@ export function withAuth(WrappedComponent) {
           }
           
           if (!session) {
-            router.push('/login');
+            router.push('/auth/signin');
             return;
           }
           
@@ -30,7 +30,7 @@ export function withAuth(WrappedComponent) {
         } catch (error) {
           console.error('Auth error:', error);
           setError(error.message);
-          router.push('/login');
+          router.push('/auth/signin');
         } finally {
           setLoading(false);
         }
@@ -40,7 +40,7 @@ export function withAuth(WrappedComponent) {
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (!session) {
-          router.push('/login');
+          router.push('/auth/signin');
         }
       });
 
@@ -51,7 +51,7 @@ export function withAuth(WrappedComponent) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p className="text-gray-600">Loading...</p>
+          
         </div>
       );
     }

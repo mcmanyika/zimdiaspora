@@ -2,9 +2,9 @@
 
 import ProfileView from '../../modules/profiles/components/ProfileView';
 import Admin from '../../components/layout/Admin';
-import Header from '../../components/layout/Header';
+import { withAuth } from '../../utils/withAuth';
 
-export default function MyProfile() {
+function MyProfile() {
   return (
     <Admin>
       <div className="p-6">
@@ -13,3 +13,4 @@ export default function MyProfile() {
     </Admin>
   );
 } 
+export default withAuth(MyProfile);

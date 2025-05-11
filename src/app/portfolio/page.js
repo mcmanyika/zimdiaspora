@@ -229,7 +229,7 @@ function Dashboard() {
 
                 {/* Investment History per Proposal */}
                 <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-4">Investment History per Project</h2>
+                    <h2 className="text-xl font-semibold mb-4">Project Investment History</h2>
                     {Object.keys(dashboardData.investmentHistory).length === 0 ? (
                         <div className="bg-white rounded-lg shadow p-6 text-center">
                             <p className="text-gray-500">No investment history available.</p>

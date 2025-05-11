@@ -7,6 +7,7 @@ import {
   ArrowLeftOnRectangleIcon
 } from '@heroicons/react/24/outline'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useEffect, useState } from 'react'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
@@ -18,8 +19,28 @@ export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClientComponentClient()
+  const [isNavigating, setIsNavigating] = useState(false)
 
-  
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth/signin')
+      }
+    }
+    checkSession()
+  }, [router, supabase])
+
+  const handleNavigation = async (href) => {
+    setIsNavigating(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      router.push(href)
+    } else {
+      router.push('/auth/signin')
+    }
+    setIsNavigating(false)
+  }
 
   return (
     <div className="flex flex-col z-50">
@@ -34,10 +55,11 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1">
         {navigation.map((item) => (
-          <Link
+          <button
             key={item.name}
-            href={item.href}
-            className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
+            onClick={() => handleNavigation(item.href)}
+            disabled={isNavigating}
+            className={`group flex items-center w-full px-2 py-2 text-sm font-medium rounded-md ${
               pathname === item.href
                 ? 'bg-gray-900 text-white'
                 : 'text-gray-700 hover:bg-gray-700 hover:text-white'
@@ -49,22 +71,22 @@ export default function Sidebar() {
             <span className="hidden md:group-hover:inline ml-3">
               {item.name}
             </span>
-          </Link>
+          </button>
         ))}
       </nav>
       {/* Sign Out Button */}
       <div className="relative md:absolute md:bottom-4 md:left-4 md:right-4">
-            <button
-              className="inline-flex px-4 py-2 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors items-center justify-center md:justify-start"
-              onClick={async () => {
-                await supabase.auth.signOut()
-                router.refresh()
-              }}
-            >
-              <ArrowLeftOnRectangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-              <span className="hidden md:group-hover:inline ml-3">Sign Out</span>
-            </button>
-          </div>
+        <button
+          className="inline-flex px-4 py-2 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors items-center justify-center md:justify-start"
+          onClick={async () => {
+            await supabase.auth.signOut()
+            router.push('/auth/signin')
+          }}
+        >
+          <ArrowLeftOnRectangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+          <span className="hidden md:group-hover:inline ml-3">Sign Out</span>
+        </button>
+      </div>
     </div>
   )
 } 
