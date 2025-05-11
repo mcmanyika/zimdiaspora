@@ -280,7 +280,7 @@ const Dashboard = () => {
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto h-[80vh]">
               <LaunchTimeline />
             </div>
           </div>
