@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
 import ProposalList from "../../modules/proposals/components/ProposalList";
 import YouTubeVideo from "./utils/youtube";
+import LaunchTimeline from "../../modules/timeline/components/LaunchTimeline";
 const CATEGORIES = ["REAL ESTATE", "AGRICULTURE", "TOURISM", "ENERGY"];
 
 const Dashboard = () => {
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [showOnlyInvested, setShowOnlyInvested] = useState(false);
   const [userInvestedProjects, setUserInvestedProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [userStats, setUserStats] = useState({
     totalInvestment: 0,
     numberOfProjects: 0,
@@ -210,10 +212,11 @@ const Dashboard = () => {
   return (
     <Admin>
       <div className="min-h-screen bg-gray-100 py-10 px-2">
-        <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
+          <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
 
-          {/* Category Tabs */}
-          <div className="flex flex-col md:flex-row justify-start mb-6 gap-2">
+        {/* Category Tabs */}
+        <div className="flex flex-col md:flex-row justify-between mb-6 gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
             {CATEGORIES.map((tab) => (
               <button
                 key={tab}
@@ -232,6 +235,46 @@ const Dashboard = () => {
             ))}
           </div>
 
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="border border-gray-400 hover:bg-lime-300 hover:text-white rounded-md px-4 py-2"
+          >
+            Track Progress To Launch
+          </button>
+        </div>
+
+        {/* Sliding Modal */}
+        <div 
+          className={`fixed top-0 right-0 h-full w-1/2 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-50 ${
+            isModalOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">&nbsp;</h2>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <LaunchTimeline />
+            </div>
+          </div>
+        </div>
+
+        {/* Overlay */}
+        {isModalOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40"
+            onClick={() => setIsModalOpen(false)}
+          />
+        )}
+ 
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="bg-gray-100 rounded-lg p-2 flex flex-col justify-center items-center h-full">
