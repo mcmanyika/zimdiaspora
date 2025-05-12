@@ -436,7 +436,7 @@ const Dashboard = () => {
                         }}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition ${
                           selectedProjectId === project.id
-                            ? "bg-black text-white"
+                            ? "bg-black text-white capitalize"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                       >
@@ -458,8 +458,8 @@ const Dashboard = () => {
           </div>
 
           {/* Project Overview */}
-          <div className="bg-gray-200 rounded-xl text-gray-800 p-6 mb-6">
-            <div className="text-blue-700 font-bold mb-4">
+          <div className="bg-gray-100  text-gray-800 p-6 mb-6">
+            <div className="text-blue-700 font-bold mb-4 uppercase">
               {proposalData?.title || 'No Active Project'}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
