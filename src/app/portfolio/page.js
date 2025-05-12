@@ -16,6 +16,7 @@ function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [user, setUser] = useState(null);
     const [sortConfig, setSortConfig] = useState({
         key: 'created_at',
         direction: 'desc'
@@ -42,10 +43,20 @@ function Dashboard() {
     const supabase = createClientComponentClient();
 
     useEffect(() => {
+        async function fetchUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+        }
+        fetchUser();
+    }, []);
+
+    useEffect(() => {
         async function fetchDashboardData() {
+            if (!user) return;
+            
             setIsLoading(true);
             try {
-                // Fetch recent investments
+                // Fetch recent investments for the current user
                 const { data: recentInvestments, error: investmentsError } = await supabase
                     .from('investments')
                     .select(`
@@ -53,23 +64,25 @@ function Dashboard() {
                         proposal:proposals(title),
                         investor:profiles(full_name)
                     `)
+                    .eq('investor_id', user.id)
                     .order('created_at', { ascending: false });
 
                 if (investmentsError) throw investmentsError;
 
-                // Fetch investment history per proposal
+                // Fetch investment history per proposal for the current user
                 const { data: proposals, error: proposalsError } = await supabase
                     .from('proposals')
                     .select(`
                         id,
                         title,
-                        investments(
+                        investments!inner(
                             amount,
                             status,
                             created_at,
                             investor_id
                         )
-                    `);
+                    `)
+                    .eq('investments.investor_id', user.id);
 
                 if (proposalsError) throw proposalsError;
 
@@ -101,8 +114,10 @@ function Dashboard() {
             }
         }
 
-        fetchDashboardData();
-    }, []);
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [user]);
 
     const handleSort = (key) => {
         setSortConfig(prevConfig => ({
