@@ -360,7 +360,7 @@ const Dashboard = () => {
                   }}
                   className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
                     selectedTab === tab
-                      ? "bg-black text-white"
+                      ? "bg-gray-800 text-white"
                       : "bg-gray-200 text-gray-700 hover:bg-blue-100"
                   }`}
                 >
@@ -371,7 +371,7 @@ const Dashboard = () => {
 
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="border border-gray-400 hover:bg-black hover:border-white hover:text-white rounded-md px-4 py-2"
+              className="border border-gray-400 hover:bg-gray-800 hover:border-white hover:text-white rounded-md px-4 py-2"
             >
               Track Progress To Launch
             </button>
@@ -463,25 +463,25 @@ const Dashboard = () => {
               {proposalData?.title || 'No Active Project'}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-xs text-gray-500">INVESTORS</div>
-                <div className="text-xl font-bold">{proposalData?.investor_count || 0}</div>
+              <div className="bg-gray-800 rounded-lg p-4 text-center">
+                <div className="text-xs text-white">INVESTORS</div>
+                <div className="text-xl font-bold text-white">{proposalData?.investor_count || 0}</div>
               </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-xs text-gray-500">CAPITAL RAISED</div>
-                <div className="text-xl font-bold text-wrap">
+              <div className="bg-gray-800 rounded-lg p-4 text-center">
+                <div className="text-xs text-white">CAPITAL RAISED</div>
+                <div className="text-xl font-bold text-wrap text-white">
                   ${proposalData?.amount_raised?.toLocaleString() || '0'}
                 </div>
               </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-xs text-gray-500">REMAINING</div>
-                <div className="text-xl font-bold">
+              <div className="bg-gray-800 rounded-lg p-4 text-center">
+                <div className="text-xs text-white">REMAINING</div>
+                <div className="text-xl font-bold text-white">
                   ${((proposalData?.budget || 0) - (proposalData?.amount_raised || 0)).toLocaleString()}
                 </div>
               </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-xs text-gray-500">PROJECT TOTAL</div>
-                <div className="text-xl font-bold">
+              <div className="bg-gray-800 rounded-lg p-4 text-center">
+                <div className="text-xs text-white">PROJECT TOTAL</div>
+                <div className="text-xl font-bold text-white">
                   ${proposalData?.budget?.toLocaleString() || '0'}
                 </div>
               </div>
