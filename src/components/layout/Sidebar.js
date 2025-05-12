@@ -5,7 +5,8 @@ import {
   UserIcon,
   DocumentTextIcon,
   ArrowLeftOnRectangleIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
@@ -15,6 +16,7 @@ const navigation = [
   { name: 'Portfolio', href: '/portfolio', icon: BriefcaseIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
+  { name: 'Project Updates', href: '/youtube', icon: VideoCameraIcon },
 ]
 
 export default function Sidebar() {
