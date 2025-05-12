@@ -527,7 +527,7 @@ const Dashboard = () => {
                 </div>
               </>
             ) : (
-              <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center">
+              <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex items-center justify-center">
                 <div className="text-lg text-gray-600">
                   {proposalData
                     ? "You haven't invested in this project yet"
