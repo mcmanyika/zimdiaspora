@@ -462,7 +462,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">INVESTORS</div>
-                <div className="text-3xl font-bold">{proposalData?.investor_count || 0}</div>
+                <div className="text-xl font-bold">{proposalData?.investor_count || 0}</div>
               </div>
               <div className="bg-white rounded-lg p-4 text-center">
                 <div className="text-xs text-gray-500">CAPITAL RAISED</div>
