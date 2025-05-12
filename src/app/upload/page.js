@@ -189,7 +189,7 @@ function UploadProfile() {
     <SmallLayout>
       <>
         <ToastContainer
-          position="top-right"
+          position="bottom-center"
           autoClose={5000}
           hideProgressBar={false}
           newestOnTop={false}
@@ -198,7 +198,7 @@ function UploadProfile() {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme="light"
+          theme="dark"
         />
         <h1 className="text-2xl font-bold mb-6 uppercase">Personal Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 w-[600px]">

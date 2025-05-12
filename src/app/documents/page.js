@@ -188,26 +188,46 @@ function DocumentsPage() {
 
   const handleDelete = async (docItem) => {
     try {
+      // Verify user has permission to delete
+      if (userEmail !== 'partsonmanyika@gmail.com' && userEmail !== 'mak@creativeastro.com') {
+        toast.error('You do not have permission to delete documents')
+        return
+      }
+
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error('You must be logged in to delete documents')
+        return
+      }
+
       // Delete from storage
       const { error: storageError } = await supabase.storage
         .from('project-documents')
         .remove([docItem.file_path])
 
-      if (storageError) throw storageError
+      if (storageError) {
+        console.error('Storage delete error:', storageError)
+        throw new Error('Failed to delete file from storage')
+      }
 
       // Delete from database
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
         .eq('id', docItem.id)
+        .eq('user_id', user.id) // Add user_id check for additional security
 
-      if (dbError) throw dbError
+      if (dbError) {
+        console.error('Database delete error:', dbError)
+        throw new Error('Failed to delete document record')
+      }
 
       toast.success('Document deleted successfully')
       fetchDocuments()
     } catch (error) {
       console.error('Error deleting document:', error)
-      toast.error('Failed to delete document')
+      toast.error(error.message || 'Failed to delete document')
     }
   }
 
