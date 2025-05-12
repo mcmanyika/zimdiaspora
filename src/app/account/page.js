@@ -432,12 +432,23 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {userInvestedProjects.length > 0 && (
-                <div className="w-full">
+              
+            </div>
+
+            {/* Youtube Video */}
+              <div className="bg-gray-100 rounded-lg p-4">
+                <YouTubeVideo />
+              </div>
+          </div>
+
+          {/* Project Overview */}
+          <div className="bg-gray-100  text-gray-800 p-6 mb-6">
+          {userInvestedProjects.length > 0 && (
+                <div className="w-full pb-8">
                   <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
-                    Your Invested Projects in {selectedTab}
+                    {selectedTab}
                   </h2>
-                  <div className="flex flex-wrap justify-center gap-3">
+                  <div className="flex flex-wrap justify-center items-center gap-3">
                     {userInvestedProjects
                       .filter(project => project.category === selectedTab)
                       .map((project) => (
@@ -447,9 +458,9 @@ const Dashboard = () => {
                             setSelectedProjectId(project.id);
                             setSelectedTab(project.category);
                           }}
-                          className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          className={`px-6 py-3  text-sm font-medium transition-all duration-200 ${
                             selectedProjectId === project.id
-                              ? "bg-black text-white capitalize shadow-md"
+                              ? "bg-gray-800 text-white capitalize shadow-md"
                               : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md"
                           }`}
                         >
@@ -462,19 +473,6 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Youtube Video */}
-              <div className="bg-gray-100 rounded-lg p-4">
-                <YouTubeVideo />
-              </div>
-          </div>
-
-          {/* Project Overview */}
-          <div className="bg-gray-100  text-gray-800 p-6 mb-6">
-            <div className="text-blue-700 font-bold mb-4 uppercase">
-              {proposalData?.title || 'No Active Project'}
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-gray-800 rounded-lg p-4 text-center">
                 <div className="text-xs text-white">INVESTORS</div>

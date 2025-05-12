@@ -17,6 +17,7 @@ function DocumentsPage() {
   const [sortField, setSortField] = useState('created_at')
   const [sortDirection, setSortDirection] = useState('desc')
   const [userEmail, setUserEmail] = useState(null)
+  const [userLevel, setUserLevel] = useState(null)
   const documentsPerPage = 6
   const fileInputRef = useRef(null)
   const supabase = createClientComponentClient()
@@ -29,6 +30,7 @@ function DocumentsPage() {
 
   useEffect(() => {
     fetchUserEmail()
+    fetchUserLevel()
     fetchDocuments()
   }, [currentPage, sortField, sortDirection])
 
@@ -40,6 +42,25 @@ function DocumentsPage() {
       }
     } catch (error) {
       console.error('Error fetching user email:', error)
+    }
+  }
+
+  const fetchUserLevel = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_level')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          setUserLevel(profile.user_level)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user level:', error)
     }
   }
 
@@ -189,7 +210,7 @@ function DocumentsPage() {
   const handleDelete = async (docItem) => {
     try {
       // Verify user has permission to delete
-      if (userEmail !== 'partsonmanyika@gmail.com' && userEmail !== 'mak@creativeastro.com') {
+      if (userLevel !== 5) {
         toast.error('You do not have permission to delete documents')
         return
       }
@@ -261,8 +282,8 @@ function DocumentsPage() {
           theme="dark"
         />
 
-        {/* Upload Section - Only visible to specific email */}
-        {(userEmail === 'partsonmanyika@gmail.com' || userEmail === 'mak@creativeastro.com') && (
+        {/* Upload Section - Only visible to user_level 5 */}
+        {userLevel === 5 && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4">Upload New Document</h2>
             <div className="space-y-4">
@@ -366,7 +387,7 @@ function DocumentsPage() {
                       >
                         Download
                       </button>
-                      {userEmail === 'partsonmanyika@gmail.com' || userEmail === 'mak@creativeastro.com' ? (
+                      {userLevel === 5 ? (
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to delete this document?')) {
