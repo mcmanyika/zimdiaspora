@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: "AfroDiaspora",
-  description: "AfroDiaspora is a platform for connecting Africans and their diaspora communities.",
+  description: "Its an African citizen agenda.",
 };
 
 export default function RootLayout({

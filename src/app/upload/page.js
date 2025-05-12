@@ -17,11 +17,33 @@ function UploadProfile() {
     phoneNumber: '',
     country: '',
     occupation: '',
-    professionalSkills: ''
+    professionalSkills: '',
+    availability: false
   });
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [userEmail, setUserEmail] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching countries:', error);
+        toast.error('Failed to load countries');
+        return;
+      }
+      
+      setCountries(data || []);
+    };
+
+    fetchCountries();
+  }, [supabase]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -48,6 +70,13 @@ function UploadProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+    
+    setIsSubmitting(true);
     setLoading(true);
     
     try {
@@ -89,6 +118,8 @@ function UploadProfile() {
             country: formData.country,
             occupation: formData.occupation,
             professional_skills: formData.professionalSkills,
+            user_level: 1,
+            availability: formData.availability ? 'full-time' : 'part-time',
             updated_at: new Date()
           })
           .eq('id', session.user.id)
@@ -108,6 +139,8 @@ function UploadProfile() {
               country: formData.country,
               occupation: formData.occupation,
               professional_skills: formData.professionalSkills,
+              user_level: 1,
+              availability: formData.availability ? 'full-time' : 'part-time',
               created_at: new Date()
             }
           ])
@@ -127,7 +160,8 @@ function UploadProfile() {
         phoneNumber: '',
         country: '',
         occupation: '',
-        professionalSkills: ''
+        professionalSkills: '',
+        availability: false
       });
       
       router.push('/');
@@ -143,8 +177,13 @@ function UploadProfile() {
       toast.error('Failed to handle profile: ' + errorMessage);
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  if (checkingSession) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <SmallLayout>
@@ -161,7 +200,7 @@ function UploadProfile() {
           pauseOnHover
           theme="light"
         />
-        <h1 className="text-2xl font-bold mb-6">Personal Profile</h1>
+        <h1 className="text-2xl font-bold mb-6 uppercase">Personal Profile</h1>
         <form onSubmit={handleSubmit} className="space-y-4 w-[600px]">
          
           <div>
@@ -204,15 +243,20 @@ function UploadProfile() {
           </div>
 
           <div>
-            <input
-              type="text"
+            <select
               name="country"
               value={formData.country}
               onChange={handleInputChange}
-              placeholder="Country"
               className="w-full p-2 border rounded-md"
               required
-            />
+            >
+              <option value="">Select Country</option>
+              {countries.map((country) => (
+                <option key={country.id} value={country.name}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -239,12 +283,28 @@ function UploadProfile() {
             />
           </div>
 
+          <div>
+            <span className="text-sm text-gray-500">Would you like to be considered for active participation in projects?</span>
+            <div className="flex items-center mt-2">
+              <input
+                type="checkbox"
+                name="availability"
+                checked={formData.availability}
+                onChange={(e) => setFormData(prev => ({ ...prev, availability: e.target.checked }))}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="availability" className="ml-2 text-sm text-gray-700">
+                Yes, I would like to participate
+              </label>
+            </div>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+            disabled={loading || isSubmitting}
+            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
-            {loading ? 'Uploading...' : 'Upload Profile'}
+            {loading ? 'Saving...' : 'Save Profile'}
           </button>
         </form>
       </>
