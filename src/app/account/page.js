@@ -371,7 +371,7 @@ const Dashboard = () => {
 
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="border border-gray-400 hover:bg-lime-300 hover:border-white hover:text-white rounded-md px-4 py-2"
+              className="border border-gray-400 hover:bg-black hover:border-white hover:text-white rounded-md px-4 py-2"
             >
               Track Progress To Launch
             </button>
