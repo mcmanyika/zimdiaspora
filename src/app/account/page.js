@@ -413,42 +413,55 @@ const Dashboard = () => {
  
           {/* User Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-100 rounded-lg p-2 flex flex-col justify-center items-center h-full">
-              <h1 className="text-2xl font-bold mb-2 uppercase">Your Investment Summary</h1>
-              <div className="text-center">
-                Total Investment: <span className="font-bold">${userStats.totalInvestment.toLocaleString()}</span>
-              </div>
-              <div className="text-center">
-                Number of Projects: <span className="font-bold">{userStats.numberOfProjects}</span>
-              </div>
-              {userInvestedProjects.length > 0 && (
-              <div className="pt-4 text-center">
-                <div className="text-sm text-gray-600 mb-2">Your Invested Projects in {selectedTab}:</div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {userInvestedProjects
-                    .filter(project => project.category === selectedTab)
-                    .map((project) => (
-                      <button
-                        key={project.id}
-                        onClick={() => {
-                          setSelectedProjectId(project.id);
-                          setSelectedTab(project.category);
-                        }}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-                          selectedProjectId === project.id
-                            ? "bg-black text-white capitalize"
-                            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
-                      >
-                        {project.title}
-                      </button>
-                    ))}
-                  {userInvestedProjects.filter(project => project.category === selectedTab).length === 0 && (
-                    <div className="text-sm text-gray-500">No investments in this category</div>
-                  )}
+            <div className="bg-gray-100 rounded-lg p-6 flex flex-col justify-center items-center h-full">
+              <h1 className="text-3xl font-bold mb-6 uppercase text-gray-800">Your Investment Summary</h1>
+              
+              <div className="grid grid-cols-2 gap-8 mb-8 w-full">
+                <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                  <div className="text-gray-600 mb-2">Total Investment</div>
+                  <div className="text-2xl font-bold text-gray-800">
+                    ${userStats.totalInvestment.toLocaleString()}
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-4 text-center shadow-sm">
+                  <div className="text-gray-600 mb-2">Number of Projects</div>
+                  <div className="text-2xl font-bold text-gray-800">
+                    {userStats.numberOfProjects}
+                  </div>
                 </div>
               </div>
-            )}
+
+              {userInvestedProjects.length > 0 && (
+                <div className="w-full">
+                  <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+                    Your Invested Projects in {selectedTab}
+                  </h2>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {userInvestedProjects
+                      .filter(project => project.category === selectedTab)
+                      .map((project) => (
+                        <button
+                          key={project.id}
+                          onClick={() => {
+                            setSelectedProjectId(project.id);
+                            setSelectedTab(project.category);
+                          }}
+                          className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            selectedProjectId === project.id
+                              ? "bg-black text-white capitalize shadow-md"
+                              : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md"
+                          }`}
+                        >
+                          {project.title}
+                        </button>
+                      ))}
+                    {userInvestedProjects.filter(project => project.category === selectedTab).length === 0 && (
+                      <div className="text-gray-500 italic">No investments in this category</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Youtube Video */}
