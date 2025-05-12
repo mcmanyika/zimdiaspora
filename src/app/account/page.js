@@ -8,6 +8,7 @@ import YouTubeVideo from "./utils/youtube";
 import LaunchTimeline from "../../modules/timeline/components/LaunchTimeline";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 const CATEGORIES = ["REAL ESTATE", "AGRICULTURE", "TOURISM", "ENERGY"];
 
 const Dashboard = () => {
@@ -325,10 +326,12 @@ const Dashboard = () => {
                   </div>
                   <div className="mt-4">
                     {selectedDocument.file_type.startsWith('image/') ? (
-                      <img 
+                      <Image 
                         src={URL.createObjectURL(selectedDocument.data)} 
                         alt={selectedDocument.file_name}
                         className="max-w-full h-auto"
+                        width={800}
+                        height={600}
                       />
                     ) : (
                       <iframe
@@ -357,7 +360,7 @@ const Dashboard = () => {
                   }}
                   className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
                     selectedTab === tab
-                      ? "bg-lime-300 text-white"
+                      ? "bg-black text-white"
                       : "bg-gray-200 text-gray-700 hover:bg-blue-100"
                   }`}
                 >
@@ -433,7 +436,7 @@ const Dashboard = () => {
                         }}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition ${
                           selectedProjectId === project.id
-                            ? "bg-blue-600 text-white"
+                            ? "bg-black text-white"
                             : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                       >
