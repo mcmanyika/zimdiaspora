@@ -104,34 +104,127 @@ function DocumentsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('User not authenticated')
 
+      // Validate file
+      const maxFileSize = 5 * 1024 * 1024 // 5MB
+      if (selectedFile.size > maxFileSize) {
+        throw new Error('File size must be less than 5MB')
+      }
+
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+      if (!allowedTypes.includes(selectedFile.type)) {
+        throw new Error('Invalid file type. Please upload PDF, JPEG, PNG, or Word documents only.')
+      }
+
       // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${user.id}/${selectedCategory}/${Date.now()}.${fileExt}`
+      // Use a simpler path structure
+      const fileName = `${Date.now()}-${selectedFile.name}`
       
-      console.log('Attempting to upload file:', {
+      console.log('Upload attempt details:', {
         fileName,
         fileType: selectedFile.type,
-        fileSize: selectedFile.size
+        fileSize: selectedFile.size,
+        userId: user.id,
+        category: selectedCategory,
+        bucket: 'project-documents',
+        auth: {
+          user: user.id,
+          email: user.email
+        }
       })
 
+      // Verify authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error')
+      }
+      if (!session) {
+        throw new Error('No active session')
+      }
+
+      // First check if the bucket exists
+      const { data: buckets, error: bucketsError } = await supabase
+        .storage
+        .listBuckets()
+
+      if (bucketsError) {
+        console.error('Error checking buckets:', bucketsError)
+        throw new Error('Failed to check storage buckets')
+      }
+
+      console.log('Available buckets:', buckets)
+
+      const bucketExists = buckets.some(b => b.name === 'project-documents')
+      if (!bucketExists) {
+        console.log('Creating project-documents bucket...')
+        const { data: newBucket, error: createError } = await supabase
+          .storage
+          .createBucket('project-documents', {
+            public: false,
+            fileSizeLimit: 5242880, // 5MB
+            allowedMimeTypes: [
+              'application/pdf',
+              'image/jpeg',
+              'image/png',
+              'application/msword',
+              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ]
+          })
+
+        if (createError) {
+          console.error('Error creating bucket:', createError)
+          throw new Error('Failed to create storage bucket')
+        }
+
+        console.log('Bucket created successfully:', newBucket)
+      }
+
+      // Try to upload with a simpler path first
+      const testFileName = `test-${Date.now()}.txt`
+      const testContent = 'test content'
+      
+      console.log('Attempting test upload...')
+      const { data: testUpload, error: testError } = await supabase.storage
+        .from('project-documents')
+        .upload(testFileName, testContent)
+
+      if (testError) {
+        console.error('Test upload error:', testError)
+      } else {
+        console.log('Test upload successful:', testUpload)
+        // Clean up test file
+        await supabase.storage
+          .from('project-documents')
+          .remove([testFileName])
+      }
+
+      // Now try the actual file upload
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('project-documents')
         .upload(fileName, selectedFile, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Allow overwriting if file exists
         })
 
       if (uploadError) {
-        console.error('Storage upload error:', {
+        console.error('Storage upload error details:', {
           error: uploadError,
           message: uploadError.message,
           details: uploadError.details,
-          hint: uploadError.hint
+          hint: uploadError.hint,
+          statusCode: uploadError.statusCode,
+          name: uploadError.name,
+          stack: uploadError.stack,
+          fileName,
+          userId: user.id,
+          bucket: 'project-documents',
+          session: session ? 'exists' : 'none'
         })
         throw uploadError
       }
 
-      console.log('File uploaded successfully:', uploadData)
+      console.log('Upload successful:', uploadData)
 
       // Create document record in database
       const { data: docData, error: dbError } = await supabase
@@ -321,7 +414,7 @@ function DocumentsPage() {
               <button
                 onClick={handleUpload}
                 disabled={uploading || !selectedFile || !selectedCategory}
-                className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+                className="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-600 disabled:bg-gray-300"
               >
                 {uploading ? 'Uploading...' : 'Upload Document'}
               </button>
