@@ -371,8 +371,11 @@ const Dashboard = () => {
 
             <button 
               onClick={() => setIsModalOpen(true)}
-              className="border border-gray-400 hover:bg-gray-800 hover:border-white hover:text-white rounded-md px-4 py-2"
+              className="border bg-red-600 text-white hover:bg-gray-800 hover:border-white hover:text-white rounded-md px-4 py-2 flex items-center gap-2"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
               Latest Update
             </button>
           </div>
@@ -420,8 +423,8 @@ const Dashboard = () => {
             <div className=" p-6 flex flex-col justify-center items-center h-full">
               <h1 className="text-3xl font-bold mb-6 uppercase text-gray-800">Your Investment Summary</h1>
               
-              <div className="grid grid-cols-2 gap-8  w-full">
-                <div className="p-2 text-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white rounded-lg p-2 text-center">
                   <div className="text-gray-600 mb-2 flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -433,7 +436,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                <div className=" p-2 text-center">
+                <div className="bg-white rounded-lg p-2 text-center">
                   <div className="text-gray-600 mb-2 flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
