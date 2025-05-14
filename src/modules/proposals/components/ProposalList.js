@@ -167,7 +167,6 @@ export default function ProposalList({ showInvestButton = true, category = null,
 
     setSelectedInvestmentProposal(proposal);
     setShowInvestmentModal(true);
-    toast.info('Enter your investment amount and card details');
   };
 
   const handleInvestmentSubmit = async (investmentData) => {
