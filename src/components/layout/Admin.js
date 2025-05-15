@@ -94,7 +94,13 @@ function Admin({ children }) {
         <Header />
         <div className="overflow-auto h-[calc(100vh-4rem)]">
           {children}
+          <footer className="bg-white dark:bg-gray-800 text-center text-sm p-4 border-t border-gray-200 dark:border-gray-700">
+          <p>
+            &copy; {new Date().getFullYear()} All rights reserved. System Developed by <a href="https://smartlearner.co.zw" className="text-blue-500 hover:text-blue-600" target="_blank" rel="noopener noreferrer">P.Manyika</a>
+          </p>
+        </footer>
         </div>
+        
       </main>
     </div>
   )
