@@ -558,8 +558,8 @@ const Dashboard = () => {
               <div className="flex-1 bg-gray-100 rounded-lg p-8 text-center flex items-center justify-center">
                 <div className="text-lg text-gray-600">
                   {proposalData
-                    ? "You haven't invested in this project yet"
-                    : "No active project in this category"}
+                    ? `You haven't invested in ${selectedTab} yet`
+                    : `No active project in ${selectedTab} category`}
                 </div>
               </div>
             )}
