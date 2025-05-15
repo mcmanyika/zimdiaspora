@@ -12,7 +12,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Dashboard', href: '/account', icon: HomeIcon },
   { name: 'Portfolio', href: '/portfolio', icon: BriefcaseIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },

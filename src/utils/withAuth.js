@@ -12,6 +12,9 @@ export function withAuth(WrappedComponent) {
     const supabase = createClientComponentClient();
 
     useEffect(() => {
+      let isMounted = true;
+      let subscription;
+
       const checkAuth = async () => {
         try {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -25,26 +28,38 @@ export function withAuth(WrappedComponent) {
             return;
           }
           
-          setIsAuthenticated(true);
-          setError(null);
+          if (isMounted) {
+            setIsAuthenticated(true);
+            setError(null);
+          }
         } catch (error) {
           console.error('Auth error:', error);
-          setError(error.message);
+          if (isMounted) {
+            setError(error.message);
+          }
           router.push('/auth/signin');
         } finally {
-          setLoading(false);
+          if (isMounted) {
+            setLoading(false);
+          }
         }
       };
 
       checkAuth();
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
         if (!session) {
           router.push('/auth/signin');
         }
       });
+      subscription = data?.subscription;
 
-      return () => subscription.unsubscribe();
+      return () => {
+        isMounted = false;
+        if (subscription && typeof subscription.unsubscribe === 'function') {
+          subscription.unsubscribe();
+        }
+      };
     }, [router]);
 
     if (loading) {

@@ -16,7 +16,6 @@ const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [proposalData, setProposalData] = useState(null);
   const [showOnlyInvested, setShowOnlyInvested] = useState(false);
-  const [userInvestedProjects, setUserInvestedProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -28,6 +27,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [userInvestments, setUserInvestments] = useState([]);
   const supabase = createClientComponentClient();
   const documentCategories = [
     { id: 'title_deeds', label: 'Title Deeds' },
@@ -51,81 +51,80 @@ const Dashboard = () => {
   }, [supabase])
 
   useEffect(() => {
-    const fetchUserStats = async () => {
+    const fetchUserInvestments = async () => {
       if (!user) return;
-
-      try {
-        // Fetch user's investments
-        const { data: investments, error: investmentsError } = await supabase
-          .from('investments')
-          .select('amount, proposal_id')
-          .eq('investor_id', user.id)
-          .eq('status', 'COMPLETED');
-
-        if (investmentsError) throw investmentsError;
-
-        // Calculate total investment and number of unique projects
-        const totalInvestment = investments.reduce((sum, inv) => sum + inv.amount, 0);
-        const uniqueProjects = new Set(investments.map(inv => inv.proposal_id)).size;
-
-        setUserStats({
-          totalInvestment,
-          numberOfProjects: uniqueProjects,
-          currentProjectInvestment: 0 // Will be updated when proposal data is fetched
-        });
-      } catch (error) {
-        console.error('Error fetching user stats:', error);
-      }
-    };
-
-    fetchUserStats();
-  }, [user, supabase]);
-
-  useEffect(() => {
-    const fetchUserInvestedProjects = async () => {
-      if (!user) return;
-
       try {
         const { data: investments, error } = await supabase
           .from('investments')
-          .select(`
-            proposal_id,
-            proposals (
-              id,
-              title,
-              category,
-              budget,
-              amount_raised
-            )
-          `)
+          .select(`amount, proposal_id, status, proposals ( id, title, category, budget, amount_raised )`)
           .eq('investor_id', user.id)
           .eq('status', 'COMPLETED');
-
         if (error) throw error;
-
-        // Get unique projects with their details
-        const uniqueProjects = investments.reduce((acc, inv) => {
-          if (!acc.find(p => p.id === inv.proposals.id)) {
-            acc.push(inv.proposals);
-          }
-          return acc;
-        }, []);
-
-        setUserInvestedProjects(uniqueProjects);
-        
-        // Set the first project as selected if none is selected
-        if (!selectedProjectId && uniqueProjects.length > 0) {
-          const firstProject = uniqueProjects[0];
-          setSelectedProjectId(firstProject.id);
-          setSelectedTab(firstProject.category); // Set the category tab to match the first project
-        }
+        setUserInvestments(investments || []);
       } catch (error) {
-        console.error('Error fetching user invested projects:', error);
+        console.error('Error fetching user investments:', error);
       }
     };
-
-    fetchUserInvestedProjects();
+    fetchUserInvestments();
   }, [user, supabase]);
+
+  useEffect(() => {
+    if (!userInvestments || userInvestments.length === 0) {
+      setUserStats({
+        totalInvestment: 0,
+        numberOfProjects: 0,
+        currentProjectInvestment: 0
+      });
+      return;
+    }
+    // Unique projects
+    const uniqueProjects = userInvestments.reduce((acc, inv) => {
+      if (inv.proposals && !acc.find(p => p.id === inv.proposals.id)) {
+        acc.push(inv.proposals);
+      }
+      return acc;
+    }, []);
+    // Total investment
+    const totalInvestment = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+    // Number of unique projects
+    const numberOfProjects = uniqueProjects.length;
+    // Current project investment
+    let currentProjectInvestment = 0;
+    if (selectedProjectId) {
+      currentProjectInvestment = userInvestments
+        .filter(inv => inv.proposal_id === selectedProjectId)
+        .reduce((sum, inv) => sum + inv.amount, 0);
+    }
+    setUserStats({
+      totalInvestment,
+      numberOfProjects,
+      currentProjectInvestment
+    });
+    // Set selected project and tab if not set
+    if (!selectedProjectId && uniqueProjects.length > 0) {
+      setSelectedProjectId(uniqueProjects[0].id);
+      setSelectedTab(uniqueProjects[0].category);
+    }
+  }, [userInvestments, selectedProjectId]);
+
+  // Helper to get userInvestedProjects for selectedTab
+  const userInvestedProjects = useMemo(() => {
+    return userInvestments
+      .map(inv => inv.proposals)
+      .filter((proj, idx, arr) => proj && arr.findIndex(p => p.id === proj.id) === idx && proj.category === selectedTab);
+  }, [userInvestments, selectedTab]);
+
+  // Centralize tab/project selection logic
+  const handleTabSelect = (tab) => {
+    setSelectedTab(tab);
+    // Find first project in this tab
+    const project = userInvestedProjects.find(p => p.category === tab);
+    setSelectedProjectId(project ? project.id : null);
+  };
+  const handleProjectSelect = (project) => {
+    setSelectedProjectId(project.id);
+    setSelectedTab(project.category);
+  };
 
   useEffect(() => {
     const fetchProposalData = async () => {
@@ -177,29 +176,6 @@ const Dashboard = () => {
 
         // Calculate unique investors
         const uniqueInvestors = new Set(investments.map(inv => inv.investor_id)).size;
-
-        let currentProjectInvestment = 0;
-
-        // Only fetch user investments if user is logged in
-        if (user) {
-          const { data: userInvestments, error: userInvestmentsError } = await supabase
-            .from('investments')
-            .select('amount')
-            .eq('proposal_id', proposal[0].id)
-            .eq('investor_id', user.id)
-            .eq('status', 'COMPLETED');
-
-          if (userInvestmentsError) {
-            console.error('Error fetching user investments:', userInvestmentsError);
-          } else if (userInvestments) {
-            currentProjectInvestment = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-          }
-        }
-
-        setUserStats(prev => ({
-          ...prev,
-          currentProjectInvestment
-        }));
 
         setProposalData({
           ...proposal[0],
@@ -354,10 +330,7 @@ const Dashboard = () => {
               {CATEGORIES.map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => {
-                    setSelectedTab(tab);
-                    setSelectedProjectId(null);
-                  }}
+                  onClick={() => handleTabSelect(tab)}
                   className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
                     selectedTab === tab
                       ? "bg-gray-800 text-white"
@@ -454,25 +427,20 @@ const Dashboard = () => {
                    Selected Category: {selectedTab}
                   </h2>
                   <div className="flex flex-wrap justify-center items-center gap-3">
-                    {userInvestedProjects
-                      .filter(project => project.category === selectedTab)
-                      .map((project) => (
-                        <button
-                          key={project.id}
-                          onClick={() => {
-                            setSelectedProjectId(project.id);
-                            setSelectedTab(project.category);
-                          }}
-                          className={`px-6 py-3  text-sm font-medium transition-all duration-200 ${
-                            selectedProjectId === project.id
-                              ? "bg-gray-800 text-white capitalize shadow-md"
-                              : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md"
-                          }`}
-                        >
-                          {project.title}
-                        </button>
-                      ))}
-                    {userInvestedProjects.filter(project => project.category === selectedTab).length === 0 && (
+                    {userInvestedProjects.map((project) => (
+                      <button
+                        key={project.id}
+                        onClick={() => handleProjectSelect(project)}
+                        className={`px-6 py-3  text-sm font-medium transition-all duration-200 ${
+                          selectedProjectId === project.id
+                            ? "bg-gray-800 text-white capitalize shadow-md"
+                            : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md"
+                        }`}
+                      >
+                        {project.title}
+                      </button>
+                    ))}
+                    {userInvestedProjects.length === 0 && (
                       <div className="text-gray-500 italic">No investments in this category</div>
                     )}
                   </div>
