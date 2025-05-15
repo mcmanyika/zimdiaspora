@@ -581,7 +581,7 @@ const Dashboard = () => {
           {/* Existing Proposals List Section */}
           <div className="mt-8">
             <div className="flex justify-between items-center mb-4">
-              <div className="text-blue-700 font-bold">ACTIVE PROJECTS</div>
+              <div className="text-blue-700 font-bold">ACTIVE INVESTMENTS</div>
               <div className="flex items-center space-x-2">
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
