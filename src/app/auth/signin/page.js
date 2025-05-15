@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import Image from 'next/image'
 
 function SignIn() {
   const supabase = createClientComponentClient()
@@ -81,51 +82,58 @@ function SignIn() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md space-y-6">
-        <h2 className="text-2xl font-bold text-center">
-          {isSignUp ? 'Create an Account' : 'Sign In'}
-        </h2>
+      <div className="flex w-full max-w-4xl bg-white rounded-lg shadow-md overflow-hidden">
+        {/* Left: Illustration */}
+        <div className="hidden md:flex items-center justify-center w-1/2 bg-gray-50 p-8">
+          {/*    */}
+        </div>
+        {/* Right: Form */}
+        <div className="w-full md:w-1/2 p-8 space-y-6 flex flex-col justify-center">
+          <h2 className="text-2xl font-bold text-center">
+            {isSignUp ? 'Create an Account' : 'Sign In'}
+          </h2>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
-        {isSignUp && (
+          {isSignUp && (
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full border border-gray-300 p-2 rounded"
+            />
+          )}
+
           <input
-            type="text"
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full border border-gray-300 p-2 rounded"
           />
-        )}
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 p-2 rounded"
+          />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 p-2 rounded"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 p-2 rounded"
-        />
+          <button
+            onClick={handleSubmit}
+            className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+          >
+            {isSignUp ? 'Sign Up' : 'Sign In'}
+          </button>
 
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
-        >
-          {isSignUp ? 'Sign Up' : 'Sign In'}
-        </button>
-
-        <button
-          onClick={() => setIsSignUp(!isSignUp)}
-          className="w-full text-sm text-gray-600 hover:underline"
-        >
-          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-        </button>
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="w-full text-sm text-gray-600 hover:underline"
+          >
+            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+          </button>
+        </div>
       </div>
     </div>
   )
