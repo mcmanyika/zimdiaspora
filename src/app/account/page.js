@@ -117,6 +117,7 @@ const Dashboard = () => {
 
   // Centralize tab/project selection logic
   const handleTabSelect = (tab) => {
+    console.log('Tab clicked:', tab);
     setSelectedTab(tab);
     // Find first project in this tab
     const project = userInvestedProjects.find(p => p.category === tab);
