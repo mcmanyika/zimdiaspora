@@ -297,92 +297,88 @@ export default function ProposalList({ showInvestButton = true, category = null,
   );
 
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full bg-white shadow rounded-lg">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('title')}>
-              Title {sortField === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
+    <div className="w-full">
+      {/* Header Row for Sorting */}
+      <div className="hidden md:grid grid-cols-5 gap-4 bg-gray-50 px-6 py-2 rounded-t-lg">
+        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('title')}>
+          Title {sortField === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
+        </div>
+        {!isMobile && (
+          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('status')}>
+            Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+          </div>
+        )}
+        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('budget')}>
+          Target Amount {sortField === 'budget' && (sortDirection === 'asc' ? '↑' : '↓')}
+        </div>
+        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('amount_raised')}>
+          Raised Amount {sortField === 'amount_raised' && (sortDirection === 'asc' ? '↑' : '↓')}
+        </div>
+        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider p-2">Action</div>
+      </div>
+
+      {/* Proposal Cards */}
+      <div className="flex flex-col divide-y divide-gray-200 bg-white shadow rounded-b-lg">
+        {currentProposals.map((proposal) => (
+          <div
+            key={proposal.id}
+            className="flex flex-col md:grid md:grid-cols-5 gap-4 items-center hover:bg-gray-100 transition-colors duration-150 cursor-pointer px-6 py-4"
+            onClick={() => setSelectedProposal(proposal)}
+          >
+            {/* Title */}
+            <div className="w-full md:w-auto font-semibold text-gray-900" onClick={() => setSelectedProposal(proposal)}>
+              {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
+            </div>
+            {/* Status */}
             {!isMobile && (
-              <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                  onClick={() => handleSort('status')}>
-                Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-              </th>
+              <div className="w-full md:w-auto" onClick={() => setSelectedProposal(proposal)}>
+                <ProposalStatusBadge status={proposal.status} />
+              </div>
             )}
-            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('budget')}>
-              Target Amount {sortField === 'budget' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => handleSort('amount_raised')}>
-              Raised Amount {sortField === 'amount_raised' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
-            <th className="px-6 p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Action
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {currentProposals.map((proposal) => (
-            <tr key={proposal.id} 
-                className="hover:bg-gray-100 transition-colors duration-150 cursor-pointer"
-                onClick={() => setSelectedProposal(proposal)}>
-              <td className="px-6 py-4 p-2 whitespace-nowrap cursor-pointer text-gray-900"
-                  onClick={() => setSelectedProposal(proposal)}>
-                {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
-              </td>
-              {!isMobile && (
-                <td className="px-6 py-4 whitespace-nowrap cursor-pointer text-gray-900"
-                    onClick={() => setSelectedProposal(proposal)}>
-                  <ProposalStatusBadge status={proposal.status} />
-                </td>
-              )}
-              <td className="px-6 py-4 whitespace-nowrap cursor-pointer text-gray-900"
-                  onClick={() => setSelectedProposal(proposal)}>
-                {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap p-2 cursor-pointer"
-                  onClick={() => setSelectedProposal(proposal)}>
-                <div className="w-full max-w-xs">
-                  <div className="flex items-center gap-2">
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={Math.min((proposal.amount_raised / proposal.budget) * 100 || 0, 100)}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        flexGrow: 1,
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: '#00D48A'
-                        },
-                        backgroundColor: '#f3f4f6'
-                      }}
-                    />
-                    <span className="text-sm ml-2 whitespace-nowrap text-gray-900">
-                      {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')} raised
-                  </div>
+            {/* Target Amount */}
+            <div className="w-full md:w-auto text-gray-900" onClick={() => setSelectedProposal(proposal)}>
+              {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
+            </div>
+            {/* Raised Amount & Progress */}
+            <div className="w-full md:w-auto" onClick={() => setSelectedProposal(proposal)}>
+              <div className="w-full max-w-xs">
+                <div className="flex items-center gap-2">
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min((proposal.amount_raised / proposal.budget) * 100 || 0, 100)}
+                    sx={{
+                      height: 8,
+                      borderRadius: 4,
+                      flexGrow: 1,
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: '#00D48A'
+                      },
+                      backgroundColor: '#f3f4f6'
+                    }}
+                  />
+                  <span className="text-sm ml-2 whitespace-nowrap text-gray-900">
+                    {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
+                  </span>
                 </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap items-center justify-center">
-                {showInvestButton && proposal.status === 'active' && (
-                  <button
-                    onClick={(e) => handleInvestClick(proposal, e)}
-                    className="px-4 py-1 bg-gray-800 text-white rounded-md hover:bg-gray-800 transition-colors"
-                  >
-                    Make Payment &gt;&gt;
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <div className="text-sm text-gray-500 mt-1">
+                  {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')} raised
+                </div>
+              </div>
+            </div>
+            {/* Action Button */}
+            <div className="w-full md:w-auto flex justify-center items-center">
+              {showInvestButton && proposal.status === 'active' && (
+                <button
+                  onClick={(e) => handleInvestClick(proposal, e)}
+                  className="px-4 py-1 bg-gray-800 text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  Make Payment &gt;&gt;
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* Pagination Controls */}
       <div className="flex justify-center items-center space-x-2 mt-4">
