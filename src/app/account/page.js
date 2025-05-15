@@ -350,7 +350,6 @@ const Dashboard = () => {
                 </button>
               ))}
             </div>
-
             <button 
               onClick={() => setIsModalOpen(true)}
               className="bg-red-600 border-gray-600 text-white hover:bg-gray-800 hover:border-white hover:text-white rounded-md px-4 py-2 flex items-center gap-2"
@@ -433,7 +432,7 @@ const Dashboard = () => {
           {userInvestedProjects.length > 0 && (
                 <div className="w-full pb-8">
                   <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
-                   Selected Category: {selectedTab}
+                   Category: {selectedTab}
                   </h2>
                   <div className="flex flex-wrap justify-center items-center gap-3">
                     {userInvestedProjects.map((project) => (
