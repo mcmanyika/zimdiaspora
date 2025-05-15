@@ -117,10 +117,11 @@ const Dashboard = () => {
 
   // Centralize tab/project selection logic
   const handleTabSelect = (tab) => {
-    console.log('Tab clicked:', tab);
     setSelectedTab(tab);
-    // Find first project in this tab
-    const project = userInvestedProjects.find(p => p.category === tab);
+    // Find first project in this tab from all user investments
+    const project = userInvestments
+      .map(inv => inv.proposals)
+      .find(p => p && p.category === tab);
     setSelectedProjectId(project ? project.id : null);
   };
   const handleProjectSelect = (project) => {
