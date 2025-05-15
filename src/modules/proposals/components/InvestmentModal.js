@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { toast } from 'react-toastify';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
+import Link from 'next/link';
 export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -297,7 +297,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+      <div className="bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-4">Invest in {proposal.title}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -352,7 +352,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              We accept most international cards. If your card is declined, please try a different card or contact your bank.
+              We accept most international cards. If your card is declined, please try a different card or<Link href="/contact" className="text-blue-500 font-bold"> Contact Us</Link>.
             </p>
           </div>
 
