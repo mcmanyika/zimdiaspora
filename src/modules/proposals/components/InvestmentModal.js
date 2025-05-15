@@ -20,6 +20,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
     { code: 'gbp', symbol: '£', name: 'British Pound' },
     { code: 'cad', symbol: 'C$', name: 'Canadian Dollar' },
     { code: 'aud', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'aed', symbol: 'د.إ', name: 'UAE Dirham' },
   ];
 
   // Error messages for common international card issues
