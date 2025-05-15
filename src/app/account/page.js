@@ -35,6 +35,7 @@ const Dashboard = () => {
     { id: 'letters', label: 'Letters / Documents' }
   ];
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -268,6 +269,12 @@ const Dashboard = () => {
     // Cleanup
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) return null;
 
   return (
     <Admin>
