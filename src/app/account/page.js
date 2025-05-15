@@ -331,10 +331,10 @@ const Dashboard = () => {
                 <button
                   key={tab}
                   onClick={() => handleTabSelect(tab)}
-                  className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition ${
+                  className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition cursor-pointer touch-action-manipulation ${
                     selectedTab === tab
                       ? "bg-gray-800 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-blue-100"
+                      : "bg-gray-200 text-gray-700 hover:bg-blue-100 active:bg-blue-200"
                   }`}
                 >
                   {tab}
