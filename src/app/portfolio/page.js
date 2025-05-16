@@ -254,7 +254,7 @@ function Dashboard() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                                 {Object.entries(dashboardData.investmentHistory).map(([proposalId, data]) => (
                                     <div key={proposalId} className="bg-white/90 rounded-2xl shadow-md p-6 border border-gray-100 transition-transform hover:scale-[1.02] hover:shadow-xl">
                                         <h3 className="font-semibold mb-2 text-blue-700 text-lg">{data.title}</h3>
@@ -315,12 +315,6 @@ function Dashboard() {
                                     </th>
                                     <th 
                                         className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-blue-100/60 transition-colors"
-                                        onClick={() => handleSort('status')}
-                                    >
-                                        Status <span className="ml-1">{getSortIcon('status')}</span>
-                                    </th>
-                                    <th 
-                                        className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-blue-100/60 transition-colors"
                                         onClick={() => handleSort('created_at')}
                                     >
                                         Date <span className="ml-1">{getSortIcon('created_at')}</span>
@@ -336,15 +330,6 @@ function Dashboard() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-700">{investment.proposal?.title}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-green-700 font-semibold">${investment.amount.toLocaleString()}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm transition-colors duration-200
-                                                ${investment.status === 'COMPLETED' ? 'bg-green-100 text-green-700 border border-green-200' :
-                                                investment.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
-                                                'bg-red-100 text-red-700 border border-red-200'}
-                                            `}>
-                                                {investment.status}
-                                            </span>
-                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-500">{new Date(investment.created_at).toLocaleDateString()}</td>
                                     </tr>
                                 ))}
