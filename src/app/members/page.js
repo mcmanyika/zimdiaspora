@@ -6,6 +6,7 @@ import Admin from '../../components/layout/Admin';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Image from 'next/image';
+import withAuth from '../../utils/withAuth';
 import { 
   ClockIcon, 
   BriefcaseIcon, 
@@ -474,4 +475,4 @@ function MembersPage() {
   );
 }
 
-export default MembersPage;
+export default withAuth(MembersPage);
