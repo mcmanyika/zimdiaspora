@@ -439,9 +439,9 @@ const Dashboard = () => {
           </div>
           {userInvestedProjects.length > 0 && (
                 <div className="w-full pb-8">
-                  <h2 className="text-lg font-semibold text-gray-700 mb-4 text-center">
+                  <div className="text-xs font-semibold text-gray-700 mb-4 text-center uppercase">
                    Category: {selectedTab}
-                  </h2>
+                  </div>
                   <div className="flex flex-wrap justify-center items-center gap-3">
                     {userInvestedProjects.map((project) => (
                       <button
