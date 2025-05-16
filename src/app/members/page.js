@@ -27,6 +27,7 @@ function MembersPage() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [allProfiles, setAllProfiles] = useState([]);
   const profilesPerPage = 6;
   const supabase = createClientComponentClient();
 
@@ -78,6 +79,37 @@ function MembersPage() {
     return rangeWithDots;
   };
 
+  // Add this new function for client-side sorting
+  const sortProfiles = useCallback((profiles, field, order) => {
+    return [...profiles].sort((a, b) => {
+      let valueA = a[field];
+      let valueB = b[field];
+
+      // Handle null/undefined values
+      if (valueA === null || valueA === undefined) valueA = '';
+      if (valueB === null || valueB === undefined) valueB = '';
+
+      // Convert to lowercase for string comparison
+      if (typeof valueA === 'string') valueA = valueA.toLowerCase();
+      if (typeof valueB === 'string') valueB = valueB.toLowerCase();
+
+      if (valueA < valueB) return order === 'asc' ? -1 : 1;
+      if (valueA > valueB) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, []);
+
+  // Modify the handleSort function
+  const handleSort = (field) => {
+    const newOrder = field === sortField && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortOrder(newOrder);
+    
+    // Sort profiles client-side
+    const sortedProfiles = sortProfiles(allProfiles, field, newOrder);
+    setProfiles(sortedProfiles);
+  };
+
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
@@ -91,20 +123,19 @@ function MembersPage() {
           query = query.or(`full_name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%`);
         }
 
-        // Apply sorting
-        query = query.order(sortField, { ascending: sortOrder === 'asc' });
-
         // Get total count
         const { count, error: countError } = await query;
         if (countError) throw countError;
         setTotalProfiles(count || 0);
 
-        // Apply pagination
-        const { data, error } = await query
-          .range((currentPage - 1) * profilesPerPage, currentPage * profilesPerPage - 1);
-
+        // Fetch all profiles
+        const { data, error } = await query;
         if (error) throw error;
-        setProfiles(data || []);
+        
+        // Store all profiles and set initial sorted profiles
+        setAllProfiles(data || []);
+        const sortedProfiles = sortProfiles(data || [], sortField, sortOrder);
+        setProfiles(sortedProfiles);
       } catch (err) {
         console.error('Error fetching profiles:', err);
         setError(err.message);
@@ -113,12 +144,25 @@ function MembersPage() {
       }
     };
 
-    // Reset to first page when search or sort changes
-    if (debouncedSearchQuery !== searchQuery) {
-      setCurrentPage(1);
-    }
     fetchProfiles();
-  }, [debouncedSearchQuery, sortField, sortOrder, currentPage]);
+  }, [debouncedSearchQuery, sortProfiles, sortField, sortOrder]);
+
+  // Modify the search effect to work with client-side sorting
+  useEffect(() => {
+    if (debouncedSearchQuery) {
+      const filteredProfiles = allProfiles.filter(profile => 
+        profile.full_name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        profile.email?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+      );
+      const sortedFilteredProfiles = sortProfiles(filteredProfiles, sortField, sortOrder);
+      setProfiles(sortedFilteredProfiles);
+      setTotalProfiles(filteredProfiles.length);
+    } else {
+      const sortedProfiles = sortProfiles(allProfiles, sortField, sortOrder);
+      setProfiles(sortedProfiles);
+      setTotalProfiles(allProfiles.length);
+    }
+  }, [debouncedSearchQuery, allProfiles, sortProfiles, sortField, sortOrder]);
 
   const totalPages = Math.ceil(totalProfiles / profilesPerPage);
 
@@ -126,15 +170,6 @@ function MembersPage() {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handleSort = (field) => {
-    if (field === sortField) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
     }
   };
 
@@ -182,23 +217,7 @@ function MembersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <Admin>
-        <div className="flex items-center justify-center p-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      </Admin>
-    );
-  }
-
-  if (error) {
-    return (
-      <Admin>
-        <div className="text-red-500 p-4">{error}</div>
-      </Admin>
-    );
-  }
+  
 
   return (
     <Admin>
@@ -239,28 +258,10 @@ function MembersPage() {
               Search
             </button>
           </div>
-          <div className="flex gap-2">
-            <select
-              value={`${sortField}-${sortOrder}`}
-              onChange={(e) => {
-                const [field, order] = e.target.value.split('-');
-                setSortField(field);
-                setSortOrder(order);
-              }}
-              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-            >
-              <option value="created_at-desc">Newest First</option>
-              <option value="created_at-asc">Oldest First</option>
-              <option value="full_name-asc">Name (A-Z)</option>
-              <option value="full_name-desc">Name (Z-A)</option>
-              <option value="country-asc">Country (A-Z)</option>
-              <option value="country-desc">Country (Z-A)</option>
-            </select>
-          </div>
         </div>
 
-         {/* Page Info */}
-         <div className="mt-4 mb-4 text-right text-sm text-gray-500">
+        {/* Page Info */}
+        <div className="mt-4 mb-4 text-right text-sm text-gray-500">
           {totalProfiles > 0 ? (
             <>
               Showing {((currentPage - 1) * profilesPerPage) + 1} to {Math.min(currentPage * profilesPerPage, totalProfiles)} of {totalProfiles} members
@@ -271,57 +272,98 @@ function MembersPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {profiles.map((profile) => (
-            <div
-              key={profile.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 overflow-hidden cursor-pointer"
-              onClick={() => handleProfileClick(profile)}
-            >
-              <div className="p-6">
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex-shrink-0">
-                    {profile.avatar_url ? (
-                      <Image
-                        src={profile.avatar_url}
-                        alt={profile.full_name || 'Profile'}
-                        width={48}
-                        height={48}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 text-lg capitalize">
-                          {(profile.full_name || '?')[0].toUpperCase()}
-                        </span>
-                      </div>
+        {/* Table Layout */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white rounded-lg overflow-hidden">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('full_name')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Name</span>
+                    {sortField === 'full_name' && (
+                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 capitalize">
-                      {profile.full_name || 'Anonymous'}
-                    </h3>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('occupation')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Occupation</span>
+                    {sortField === 'occupation' && (
+                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
                   </div>
-                </div>
-
-                <div className="space-y-3">
-                  {profile.occupation && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Occupation</p>
-                      <p className="text-base text-gray-900">{profile.occupation}</p>
+                </th>
+                <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('country')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Country</span>
+                    {sortField === 'country' && (
+                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+                <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('availability')}>
+                  <div className="flex items-center space-x-1">
+                    <span>Availability</span>
+                    {sortField === 'availability' && (
+                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {profiles.map((profile) => (
+                <tr key={profile.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => handleProfileClick(profile)}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        {profile.avatar_url ? (
+                          <Image
+                            src={profile.avatar_url}
+                            alt={profile.full_name || 'Profile'}
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-500 text-sm capitalize">
+                              {(profile.full_name || '?')[0].toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900 capitalize">
+                          {profile.full_name || 'Anonymous'}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  {profile.country && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Country</p>
-                      <p className="text-base text-gray-900">{profile.country}</p>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{profile.occupation || '-'}</div>
+                  </td>
+                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{profile.country || '-'}</div>
+                  </td>
+                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      {getAvailabilityIcon(profile.availability)}
+                      <span className="text-sm text-gray-900">
+                        {getAvailabilityText(profile.availability)}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Profile Detail Modal */}
