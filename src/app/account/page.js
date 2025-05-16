@@ -14,7 +14,7 @@ const CATEGORIES = [
   { name: "REAL ESTATE", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
   { name: "AGRICULTURE", icon: "M12 19l9 2-9-18-9 18 9-2zm0 0v-8" },
   { name: "TOURISM", icon: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-  { name: "ENERGY", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
+  // { name: "ENERGY", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
   { name: "MEMBERSHIP", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
 ];
 
@@ -358,17 +358,17 @@ const Dashboard = () => {
 
         <div className="max-w-7xl bg-white rounded-xl shadow-lg p-8">
           {/* Category Tabs */}
-          <div className="flex flex-col md:flex-row justify-between mb-6 gap-2">
-            <div className="flex flex-col md:flex-row gap-2">
+          <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {CATEGORIES.map((tab) => (
                 <button
                   key={tab.name}
                   onClick={() => handleTabSelect(tab.name)}
                   disabled={isCategoryLoading}
-                  className={`px-4 sm:px-6 py-2 rounded-md font-semibold text-sm sm:text-base transition cursor-pointer touch-action-manipulation flex items-center gap-2 ${
+                  className={`relative px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 shadow hover:shadow-md flex items-center justify-center gap-2 ${
                     selectedTab === tab.name
-                      ? "bg-gray-800 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-blue-100 active:bg-blue-200"
+                      ? "bg-blue-600 text-white transform scale-105"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
                   } ${isCategoryLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isCategoryLoading && selectedTab === tab.name ? (
@@ -381,20 +381,23 @@ const Dashboard = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                     </svg>
                   )}
-                  {tab.name}
+                  <span className="hidden md:inline">{tab.name}</span>
                 </button>
               ))}
             </div>
-            {userStats.totalInvestment === 0 && <MembershipList />}  
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="bg-red-600 border-gray-600 text-white hover:bg-gray-800 hover:border-white hover:text-white rounded-md px-4 py-2 flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Latest Update
-            </button>
+
+            <div className="flex items-center gap-4">
+              {userStats.totalInvestment === 0 && <MembershipList />}
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-2 hover:from-red-600 hover:to-red-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Latest Update
+              </button>
+            </div>
           </div>
 
           {/* Sliding Modal */}

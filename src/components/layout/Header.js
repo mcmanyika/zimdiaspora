@@ -85,7 +85,7 @@ function Header() {
         <h1 className="text-lg font-bold text-gray-800">
           Hello <label className="font-thin">,{user?.user_metadata?.full_name}</label> 
         </h1>
-
+        
         <div className="relative">
           <button
             data-dropdown-button
