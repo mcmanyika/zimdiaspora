@@ -104,9 +104,14 @@ export default function ProposalList({ showInvestButton = true, category = null,
 
         let filteredProposals = data;
 
+        // Filter out Membership proposals
+        filteredProposals = filteredProposals.filter(proposal => 
+          proposal.title.toLowerCase() !== 'membership'
+        );
+
         // Filter for user's investments if requested
         if (showOnlyInvested && userId) {
-          filteredProposals = data.filter(proposal => 
+          filteredProposals = filteredProposals.filter(proposal => 
             proposal.investments.some(inv => 
               inv.investor_id === userId && inv.amount > 0
             )

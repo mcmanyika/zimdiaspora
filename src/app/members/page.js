@@ -244,7 +244,7 @@ function MembersPage() {
     fetchProfiles();
   }, [debouncedSearchQuery, sortProfiles, sortField, sortOrder]);
 
-  // Modify the search effect to work with client-side sorting
+  // Modify the search effect to work with client-side sorting and pagination
   useEffect(() => {
     if (debouncedSearchQuery) {
       const filteredProfiles = allProfiles.filter(profile => 
@@ -260,6 +260,13 @@ function MembersPage() {
       setTotalProfiles(allProfiles.length);
     }
   }, [debouncedSearchQuery, allProfiles, sortProfiles, sortField, sortOrder]);
+
+  // Add function to get paginated profiles
+  const getPaginatedProfiles = () => {
+    const startIndex = (currentPage - 1) * profilesPerPage;
+    const endIndex = startIndex + profilesPerPage;
+    return profiles.slice(startIndex, endIndex);
+  };
 
   const totalPages = Math.ceil(totalProfiles / profilesPerPage);
 
@@ -488,7 +495,7 @@ function MembersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {profiles.map((profile) => (
+                {getPaginatedProfiles().map((profile) => (
                   <tr key={profile.id} 
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => handleProfileClick(profile)}>

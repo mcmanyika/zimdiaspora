@@ -22,7 +22,6 @@ function Header() {
           console.error('Error getting user:', error.message)
           return
         }
-        console.log('User session:', user)
         setUser(user)
 
         // Check if user has any completed payments
