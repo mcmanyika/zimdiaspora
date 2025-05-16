@@ -258,6 +258,18 @@ function MembersPage() {
           </div>
         </div>
 
+         {/* Page Info */}
+         <div className="mt-4 mb-4 text-right text-sm text-gray-500">
+          {totalProfiles > 0 ? (
+            <>
+              Showing {((currentPage - 1) * profilesPerPage) + 1} to {Math.min(currentPage * profilesPerPage, totalProfiles)} of {totalProfiles} members
+              {debouncedSearchQuery && ` matching "${debouncedSearchQuery}"`}
+            </>
+          ) : (
+            'No members found'
+          )}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {profiles.map((profile) => (
             <div
@@ -456,17 +468,7 @@ function MembersPage() {
           </div>
         )}
 
-        {/* Page Info */}
-        <div className="mt-4 text-center text-sm text-gray-500">
-          {totalProfiles > 0 ? (
-            <>
-              Showing {((currentPage - 1) * profilesPerPage) + 1} to {Math.min(currentPage * profilesPerPage, totalProfiles)} of {totalProfiles} members
-              {debouncedSearchQuery && ` matching "${debouncedSearchQuery}"`}
-            </>
-          ) : (
-            'No members found'
-          )}
-        </div>
+       
       </div>
     </Admin>
   );
