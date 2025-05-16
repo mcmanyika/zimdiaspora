@@ -305,18 +305,6 @@ function MembersPage() {
                       <p className="text-base text-gray-900">{profile.country}</p>
                     </div>
                   )}
-
-                  {profile.availability && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Availability</p>
-                      <div className="flex items-center space-x-2">
-                        {getAvailabilityIcon(profile.availability)}
-                        <p className="text-base text-gray-900 capitalize">
-                          {getAvailabilityText(profile.availability)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
