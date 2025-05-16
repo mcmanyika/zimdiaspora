@@ -12,6 +12,7 @@ function Header() {
   const [appName] = useGlobalState('appName')
   const [user, setUser] = useState(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [hasPayment, setHasPayment] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
@@ -23,6 +24,23 @@ function Header() {
         }
         console.log('User session:', user)
         setUser(user)
+
+        // Check if user has any completed payments
+        if (user) {
+          const { data: investments, error: investmentsError } = await supabase
+            .from('investments')
+            .select('status')
+            .eq('investor_id', user.id)
+            .eq('status', 'COMPLETED')
+            .limit(1)
+
+          if (investmentsError) {
+            console.error('Error checking investments:', investmentsError)
+            return
+          }
+
+          setHasPayment(investments && investments.length > 0)
+        }
       } catch (err) {
         console.error('Unexpected error getting user:', err)
       }
@@ -66,9 +84,8 @@ function Header() {
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-bold text-gray-800">
-        Hello <label className="font-thin">,{user?.user_metadata?.full_name }</label> 
+          Hello <label className="font-thin">,{user?.user_metadata?.full_name}</label> 
         </h1>
-
         <div className="relative">
           <button
             data-dropdown-button

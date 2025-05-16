@@ -15,5 +15,6 @@ export const PROPOSAL_CATEGORIES = [
   'Business',
   'Technology',
   'Community',
+  'Membership',
   'Other',
 ]; 
