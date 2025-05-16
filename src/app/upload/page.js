@@ -201,7 +201,7 @@ function UploadProfile() {
           theme="dark"
         />
         <h1 className="text-2xl font-bold mb-6 uppercase">Personal Profile</h1>
-        <form onSubmit={handleSubmit} className="space-y-4 w-[600px]">
+        <form onSubmit={handleSubmit} className="space-y-4 w-full  px-4 sm:px-0">
          
           <div>
             <select
