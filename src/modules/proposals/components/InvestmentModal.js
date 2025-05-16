@@ -353,7 +353,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              We accept most international cards. If your card is declined, please try a different card or<Link href="/contact" className="text-blue-500 font-bold"> Contact Us</Link>.
+              We accept most international cards. If your card is declined, please try a different card or<Link href="https://buy.stripe.com/14A8wP21U0Eh5YU3dr77O08" className="text-blue-500 font-bold"> Click here to pay with Stripe</Link>.
             </p>
           </div>
 
