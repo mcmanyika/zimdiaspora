@@ -104,11 +104,6 @@ export default function ProposalList({ showInvestButton = true, category = null,
 
         let filteredProposals = data;
 
-        // Filter out Membership proposals
-        filteredProposals = filteredProposals.filter(proposal => 
-          proposal.title.toLowerCase() !== 'membership'
-        );
-
         // Filter for user's investments if requested
         if (showOnlyInvested && userId) {
           filteredProposals = filteredProposals.filter(proposal => 
@@ -306,83 +301,80 @@ export default function ProposalList({ showInvestButton = true, category = null,
   );
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header Row for Sorting */}
-      <div className="hidden md:grid grid-cols-5 gap-4 bg-gray-50 px-6 py-2 rounded-t-lg">
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('title')}>
+      <div className="hidden md:flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
+        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('title')}>
           Title {sortField === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
         </div>
-        {!isMobile && (
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('status')}>
-            Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </div>
-        )}
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('budget')}>
+        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('budget')}>
           Target Amount {sortField === 'budget' && (sortDirection === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 p-2 rounded" onClick={() => handleSort('amount_raised')}>
+        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('amount_raised')}>
           Raised Amount {sortField === 'amount_raised' && (sortDirection === 'asc' ? '↑' : '↓')}
         </div>
-        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider p-2">Action</div>
       </div>
 
-      {/* Proposal Cards */}
-      <div className="flex flex-col divide-y divide-gray-200 bg-white shadow rounded-b-lg">
+      {/* Proposal Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {currentProposals.map((proposal) => (
           <div
             key={proposal.id}
-            className="flex flex-col md:grid md:grid-cols-5 gap-4 items-center hover:bg-gray-100 transition-colors duration-150 cursor-pointer px-6 py-4"
+            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-100"
             onClick={() => setSelectedProposal(proposal)}
           >
-            {/* Title */}
-            <div className="w-full md:w-auto font-semibold text-gray-900" onClick={() => setSelectedProposal(proposal)}>
-              {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
-            </div>
-            {/* Status */}
-            {!isMobile && (
-              <div className="w-full md:w-auto" onClick={() => setSelectedProposal(proposal)}>
-                <ProposalStatusBadge status={proposal.status} />
+            <div className="p-6">
+              {/* Title */}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                  {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
+                </h3>
               </div>
-            )}
-            {/* Target Amount */}
-            <div className="w-full md:w-auto text-gray-900" onClick={() => setSelectedProposal(proposal)}>
-              {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
-            </div>
-            {/* Raised Amount & Progress */}
-            <div className="w-full md:w-auto" onClick={() => setSelectedProposal(proposal)}>
-              <div className="w-full max-w-xs">
-                <div className="flex items-center gap-2">
+
+              {/* Budget and Raised Amount */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Target Amount</span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Raised</span>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')}
+                    </span>
+                  </div>
                   <LinearProgress
                     variant="determinate"
                     value={Math.min((proposal.amount_raised / proposal.budget) * 100 || 0, 100)}
                     sx={{
                       height: 8,
                       borderRadius: 4,
-                      flexGrow: 1,
                       '& .MuiLinearProgress-bar': {
                         backgroundColor: '#00D48A'
                       },
                       backgroundColor: '#f3f4f6'
                     }}
                   />
-                  <span className="text-sm ml-2 whitespace-nowrap text-gray-900">
+                  <div className="text-sm text-gray-500 text-right">
                     {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
-                  </span>
-                </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')} raised
+                  </div>
                 </div>
               </div>
-            </div>
-            {/* Action Button */}
-            <div className="w-full md:w-auto flex justify-center items-center">
+
+              {/* Action Button */}
               {showInvestButton && proposal.status === 'active' && (
-                <button
-                  onClick={(e) => handleInvestClick(proposal, e)}
-                  className="px-4 py-1 bg-gray-800 text-white rounded-md hover:bg-gray-800 transition-colors"
-                >
-                  Make Payment &gt;&gt;
-                </button>
+                <div className="mt-6">
+                  <button
+                    onClick={(e) => handleInvestClick(proposal, e)}
+                    className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
+                  >
+                    Make Payment
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -390,28 +382,28 @@ export default function ProposalList({ showInvestButton = true, category = null,
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-center items-center space-x-2 mt-4">
+      <div className="flex justify-center items-center space-x-4 mt-8">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`px-4 py-1 rounded ${
+          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
             currentPage === 1
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-900 text-white hover:bg-gray-800'
           }`}
         >
           Previous
         </button>
-        <span className="text-gray-600">
+        <span className="text-gray-600 font-medium">
           Page {currentPage} of {totalPages}
         </span>
         <button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`px-4 py-1 rounded ${
+          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
             currentPage === totalPages
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-gray-900 text-white hover:bg-gray-800'
           }`}
         >
           Next
