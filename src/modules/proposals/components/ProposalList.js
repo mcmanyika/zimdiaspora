@@ -314,7 +314,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
   );
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto">
       {/* Header Row for Sorting */}
       <div className="hidden md:flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
         <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('title')}>
@@ -336,7 +336,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
             className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-100"
             onClick={() => setSelectedProposal(proposal)}
           >
-            <div className="p-6">
+            <div className="p-2">
               {/* Title */}
               <div className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
