@@ -38,7 +38,7 @@ export default function MembershipList({ showInvestButton = true, showOnlyInvest
   };
 
   const sortedProposals = [...proposals]
-    .filter(proposal => proposal.status === 'active' && proposal.title.toLowerCase().includes('membership'))
+    .filter(proposal => proposal.status === 'active')
     .sort((a, b) => {
       let compareA = a[sortField];
       let compareB = b[sortField];
