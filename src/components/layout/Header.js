@@ -86,6 +86,15 @@ function Header() {
         <h1 className="text-lg font-bold text-gray-800">
           Hello <label className="font-thin">,{user?.user_metadata?.full_name}</label> 
         </h1>
+        <script async
+            src="https://js.stripe.com/v3/buy-button.js">
+          </script>
+
+          <stripe-buy-button
+            buy-button-id="buy_btn_1RPSG5HXrdQYsUmnOQ2zuA0d"
+            publishable-key="pk_live_51MJe2UHXrdQYsUmndYJEEaLJrPLEUpWXEjlsHaJCYvcifZAJcD5O4dRjgRIgByLhM9w18AN6DNXzznxHiau1mLTw00k4RM3DxI"
+          >
+          </stripe-buy-button>
         <div className="relative">
           <button
             data-dropdown-button
