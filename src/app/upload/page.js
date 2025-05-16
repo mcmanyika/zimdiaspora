@@ -164,7 +164,7 @@ function UploadProfile() {
         availability: false
       });
       
-      router.push('/');
+      router.push('/account');
       
     } catch (error) {
       console.error('Error handling profile:', error);
