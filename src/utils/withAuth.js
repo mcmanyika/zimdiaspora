@@ -31,6 +31,10 @@ export function withAuth(WrappedComponent) {
           if (isMounted) {
             setIsAuthenticated(true);
             setError(null);
+            // Redirect to /account if user is on root path
+            if (window.location.pathname === '/') {
+              router.push('/account');
+            }
           }
         } catch (error) {
           console.error('Auth error:', error);

@@ -13,7 +13,7 @@ export default async function ProtectedPage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-24 gap-8">
       <h1 className="text-4xl font-bold">Protected Page</h1>
       <p className="text-xl">Welcome, {session.user?.name}! This page is only visible to authenticated users.</p>
-        <Link href="/">Go back home</Link>
+        <Link href="/account">Go back home</Link>
     </div>
   )
 }

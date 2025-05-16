@@ -14,6 +14,7 @@ function SignIn() {
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState(null)
+  const [showVerifyEmailMessage, setShowVerifyEmailMessage] = useState(false)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -66,6 +67,7 @@ function SignIn() {
         },
       })
       if (error) setError(error.message)
+      else setShowVerifyEmailMessage(true)
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError(error.message)
@@ -94,6 +96,12 @@ function SignIn() {
           </h2>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {showVerifyEmailMessage && (
+            <p className="text-green-600 text-sm text-center">
+              A verification email has been sent. Please check your inbox to verify your email address.
+            </p>
+          )}
 
           {isSignUp && (
             <input
