@@ -67,7 +67,12 @@ function SignIn() {
         },
       })
       if (error) setError(error.message)
-      else setShowVerifyEmailMessage(true)
+      else {
+        setShowVerifyEmailMessage(true)
+        setEmail('')
+        setPassword('')
+        setFullName('')
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) setError(error.message)
