@@ -37,9 +37,21 @@ const Dashboard = () => {
   const [userInvestments, setUserInvestments] = useState([]);
   const supabase = createClientComponentClient();
   const documentCategories = [
-    { id: 'title_deeds', label: 'Title Deeds' },
-    { id: 'bank_statements', label: 'Bank Statements' },
-    { id: 'letters', label: 'Letters / Documents' }
+    { 
+      id: 'title_deeds', 
+      label: 'Title Deeds',
+      icon: 'M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2'
+    },
+    { 
+      id: 'bank_statements', 
+      label: 'Bank Statements',
+      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    },
+    { 
+      id: 'letters', 
+      label: 'Letters / Documents',
+      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+    }
   ];
   const router = useRouter();
   const [hasMounted, setHasMounted] = useState(false);
@@ -367,7 +379,7 @@ const Dashboard = () => {
                   disabled={isCategoryLoading}
                   className={`relative px-4 py-3 rounded-lg font-medium text-sm transition-all duration-200 shadow hover:shadow-md flex items-center justify-center gap-2 ${
                     selectedTab === tab.name
-                      ? "bg-blue-600 text-white transform scale-105"
+                      ? "bg-cyan-400 text-white transform scale-105"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                   } ${isCategoryLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
@@ -388,7 +400,6 @@ const Dashboard = () => {
 
             <div className="flex items-center gap-4">
               {userStats.totalInvestment === 0 && <MembershipList />}
-              
             </div>
           </div>
 
@@ -587,8 +598,11 @@ const Dashboard = () => {
                 <button
                   key={category.id}
                   onClick={() => router.push('/documents')}
-                  className="w-full p-4 m-2 rounded-lg bg-gray-400 text-white font-bold text-lg hover:bg-gray-500 transition-colors"
+                  className="w-full p-4 m-2 rounded-lg bg-gray-100 text-gray-700 font-medium text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
                 >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={category.icon} />
+                  </svg>
                   {category.label}
                 </button>
               ))}

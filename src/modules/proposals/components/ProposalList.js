@@ -24,6 +24,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
   const [selectedInvestmentProposal, setSelectedInvestmentProposal] = useState(null);
   const [user, setUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hasMembershipPayment, setHasMembershipPayment] = useState(false);
   const proposalsPerPage = 5;
   const supabase = createClientComponentClient();
 
@@ -148,9 +149,21 @@ export default function ProposalList({ showInvestButton = true, category = null,
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      // Check if user has already paid for membership
+      if (user) {
+        const { data: investments } = await supabase
+          .from('investments')
+          .select('*')
+          .eq('investor_id', user.id)
+          .eq('status', 'COMPLETED')
+          .eq('proposal_id', proposals.find(p => p.category === 'MEMBERSHIP')?.id);
+        
+        setHasMembershipPayment(investments && investments.length > 0);
+      }
     };
     getUser();
-  }, [supabase]);
+  }, [supabase, proposals]);
 
   const handleInvestClick = async (proposal, e) => {
     e.stopPropagation();
@@ -316,7 +329,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
       </div>
 
       {/* Proposal Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {currentProposals.map((proposal) => (
           <div
             key={proposal.id}
@@ -366,11 +379,11 @@ export default function ProposalList({ showInvestButton = true, category = null,
               </div>
 
               {/* Action Button */}
-              {showInvestButton && proposal.status === 'active' && (
+              {showInvestButton && proposal.status === 'active' && !(proposal.category === 'MEMBERSHIP' && hasMembershipPayment) && (
                 <div className="mt-6">
                   <button
                     onClick={(e) => handleInvestClick(proposal, e)}
-                    className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
+                    className="w-full px-4 py-2 bg-cyan-400 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
                   >
                     Make Payment
                   </button>
