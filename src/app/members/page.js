@@ -32,9 +32,46 @@ function MembersPage() {
   const [currentInvestmentPage, setCurrentInvestmentPage] = useState(1);
   const [investmentSortField, setInvestmentSortField] = useState('created_at');
   const [investmentSortOrder, setInvestmentSortOrder] = useState('desc');
+  const [userLevel, setUserLevel] = useState(null);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const investmentsPerPage = 9;
   const profilesPerPage = 6;
   const supabase = createClientComponentClient();
+
+  // Add function to check user level
+  const checkUserLevel = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/login';
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('user_level')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (profile.user_level !== 5) {
+        window.location.href = '/account';
+        return;
+      }
+
+      setUserLevel(profile.user_level);
+    } catch (err) {
+      console.error('Error checking user level:', err);
+      window.location.href = '/account';
+    } finally {
+      setIsCheckingAccess(false);
+    }
+  };
+
+  useEffect(() => {
+    checkUserLevel();
+  }, []);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -118,8 +155,8 @@ function MembersPage() {
   // Add function to sort investments
   const sortInvestments = useCallback((investments, field, order) => {
     return [...investments].sort((a, b) => {
-      let valueA = field === 'project' ? a.proposal?.title : a[field];
-      let valueB = field === 'project' ? b.proposal?.title : b[field];
+      let valueA = field === 'investment' ? a.proposal?.title : a[field];
+      let valueB = field === 'investment' ? b.proposal?.title : b[field];
 
       // Handle null/undefined values
       if (valueA === null || valueA === undefined) valueA = '';
@@ -356,426 +393,426 @@ function MembersPage() {
 
   return (
     <Admin>
-      <div className="p-6">
-        <ToastContainer
-          position="bottom-center"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Members Directory</h1>
-        </div>
-
-        {/* Search and Sort Controls */}
-        <div className="mb-6 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 flex gap-2">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchQuery}
-              onChange={handleSearch}
-              onKeyDown={handleSearchSubmit}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
-            />
-            <button
-              onClick={executeSearch}
-              className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-            >
-              Search
-            </button>
+      {isCheckingAccess ? null : userLevel === 5 ? (
+        <div className="p-6">
+          <ToastContainer
+            position="bottom-center"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="dark"
+          />
+          
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Members Directory</h1>
           </div>
-        </div>
 
-        {/* Page Info */}
-        <div className="mt-4 mb-4 text-right text-sm text-gray-500">
-          {totalProfiles > 0 ? (
-            <>
-              Showing {((currentPage - 1) * profilesPerPage) + 1} to {Math.min(currentPage * profilesPerPage, totalProfiles)} of {totalProfiles} members
-              {debouncedSearchQuery && ` matching "${debouncedSearchQuery}"`}
-            </>
-          ) : (
-            'No members found'
-          )}
-        </div>
+          {/* Search and Sort Controls */}
+          <div className="mb-6 flex flex-col md:flex-row gap-4">
+            <div className="flex-1 flex gap-2">
+              <input
+                type="text"
+                placeholder="Search by name or email..."
+                value={searchQuery}
+                onChange={handleSearch}
+                onKeyDown={handleSearchSubmit}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+              <button
+                onClick={executeSearch}
+                className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+              >
+                Search
+              </button>
+            </div>
+          </div>
 
-        {/* Table Layout */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('full_name')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Name</span>
-                    {sortField === 'full_name' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
+          {/* Page Info */}
+          <div className="mt-4 mb-4 text-right text-sm text-gray-500">
+            {totalProfiles > 0 ? (
+              <>
+                Showing {((currentPage - 1) * profilesPerPage) + 1} to {Math.min(currentPage * profilesPerPage, totalProfiles)} of {totalProfiles} members
+                {debouncedSearchQuery && ` matching "${debouncedSearchQuery}"`}
+              </>
+            ) : (
+              'No members found'
+            )}
+          </div>
+
+          {/* Table Layout */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white rounded-lg overflow-hidden">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('full_name')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Name</span>
+                      {sortField === 'full_name' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('occupation')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Occupation</span>
+                      {sortField === 'occupation' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('country')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Country</span>
+                      {sortField === 'country' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                      onClick={() => handleSort('availability')}>
+                    <div className="flex items-center space-x-1">
+                      <span>Availability</span>
+                      {sortField === 'availability' && (
+                        <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {profiles.map((profile) => (
+                  <tr key={profile.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleProfileClick(profile)}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          {profile.avatar_url ? (
+                            <Image
+                              src={profile.avatar_url}
+                              alt={profile.full_name || 'Profile'}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-sm capitalize">
+                                {(profile.full_name || '?')[0].toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 capitalize">
+                            {profile.full_name || 'Anonymous'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{profile.occupation || '-'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{profile.country || '-'}</div>
+                    </td>
+                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center space-x-2">
+                        {getAvailabilityIcon(profile.availability)}
+                        <span className="text-sm text-gray-900">
+                          {getAvailabilityText(profile.availability)}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Profile Detail Modal */}
+          {isModalOpen && selectedProfile && (
+            <div className="fixed inset-0 bg-white z-50">
+              <div className="h-full flex flex-col">
+                {/* Header */}
+                <div className="border-b border-gray-200 bg-white px-6 py-4 flex justify-between items-center">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      {selectedProfile.avatar_url ? (
+                        <Image
+                          src={selectedProfile.avatar_url}
+                          alt={selectedProfile.full_name || 'Profile'}
+                          width={48}
+                          height={48}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-lg capitalize">
+                            {(selectedProfile.full_name || '?')[0].toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                        {selectedProfile.full_name || 'Anonymous'}
+                      </h2>
+                      <p className="text-gray-500">{selectedProfile.email}</p>
+                    </div>
                   </div>
-                </th>
-                <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('occupation')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Occupation</span>
-                    {sortField === 'occupation' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('country')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Country</span>
-                    {sortField === 'country' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-                <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('availability')}>
-                  <div className="flex items-center space-x-1">
-                    <span>Availability</span>
-                    {sortField === 'availability' && (
-                      <span>{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {profiles.map((profile) => (
-                <tr key={profile.id} 
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleProfileClick(profile)}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        {profile.avatar_url ? (
-                          <Image
-                            src={profile.avatar_url}
-                            alt={profile.full_name || 'Profile'}
-                            width={40}
-                            height={40}
-                            className="rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-500 text-sm capitalize">
-                              {(profile.full_name || '?')[0].toUpperCase()}
-                            </span>
+                  <button
+                    onClick={closeModal}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="max-w-7xl mx-auto px-6 py-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      {/* Profile Information */}
+                      <div className="space-y-6 md:col-span-1">
+                        <h3 className="text-lg font-medium text-gray-900 uppercase">Profile Information</h3>
+                        
+                        {selectedProfile.occupation && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Occupation</h4>
+                            <p className="mt-1 text-base text-gray-900">{selectedProfile.occupation}</p>
+                          </div>
+                        )}
+
+                        {selectedProfile.professional_skills && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Professional Skills</h4>
+                            <p className="mt-1 text-base text-gray-900">{selectedProfile.professional_skills}</p>
+                          </div>
+                        )}
+
+                        {selectedProfile.gender && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Gender</h4>
+                            <p className="mt-1 text-base text-gray-900 capitalize">{selectedProfile.gender}</p>
+                          </div>
+                        )}
+
+                        {selectedProfile.date_of_birth && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Date of Birth</h4>
+                            <p className="mt-1 text-base text-gray-900">
+                              {new Date(selectedProfile.date_of_birth).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+
+                        {selectedProfile.phone_number && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Phone Number</h4>
+                            <p className="mt-1 text-base text-gray-900">{selectedProfile.phone_number}</p>
+                          </div>
+                        )}
+
+                        {selectedProfile.country && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Country</h4>
+                            <p className="mt-1 text-base text-gray-900">{selectedProfile.country}</p>
+                          </div>
+                        )}
+
+                        {selectedProfile.availability && (
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500">Availability</h4>
+                            <div className="flex items-center space-x-2 mt-1">
+                              {getAvailabilityIcon(selectedProfile.availability)}
+                              <p className="text-base text-gray-900 capitalize">
+                                {getAvailabilityText(selectedProfile.availability)}
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 capitalize">
-                          {profile.full_name || 'Anonymous'}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{profile.occupation || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{profile.country || '-'}</div>
-                  </td>
-                  <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getAvailabilityIcon(profile.availability)}
-                      <span className="text-sm text-gray-900">
-                        {getAvailabilityText(profile.availability)}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
-        {/* Profile Detail Modal */}
-        {isModalOpen && selectedProfile && (
-          <div className="fixed inset-0 bg-white z-50">
-            <div className="h-full flex flex-col">
-              {/* Header */}
-              <div className="border-b border-gray-200 bg-white px-6 py-4 flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-shrink-0">
-                    {selectedProfile.avatar_url ? (
-                      <Image
-                        src={selectedProfile.avatar_url}
-                        alt={selectedProfile.full_name || 'Profile'}
-                        width={48}
-                        height={48}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-gray-500 text-lg capitalize">
-                          {(selectedProfile.full_name || '?')[0].toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 capitalize">
-                      {selectedProfile.full_name || 'Anonymous'}
-                    </h2>
-                    <p className="text-gray-500">{selectedProfile.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={closeModal}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="max-w-7xl mx-auto px-6 py-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Profile Information */}
-                    <div className="space-y-6 md:col-span-1">
-                      <h3 className="text-lg font-medium text-gray-900 uppercase">Profile Information</h3>
-                      
-                      {selectedProfile.occupation && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Occupation</h4>
-                          <p className="mt-1 text-base text-gray-900">{selectedProfile.occupation}</p>
-                        </div>
-                      )}
-
-                      {selectedProfile.professional_skills && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Professional Skills</h4>
-                          <p className="mt-1 text-base text-gray-900">{selectedProfile.professional_skills}</p>
-                        </div>
-                      )}
-
-                      {selectedProfile.gender && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Gender</h4>
-                          <p className="mt-1 text-base text-gray-900 capitalize">{selectedProfile.gender}</p>
-                        </div>
-                      )}
-
-                      {selectedProfile.date_of_birth && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Date of Birth</h4>
-                          <p className="mt-1 text-base text-gray-900">
-                            {new Date(selectedProfile.date_of_birth).toLocaleDateString()}
-                          </p>
-                        </div>
-                      )}
-
-                      {selectedProfile.phone_number && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Phone Number</h4>
-                          <p className="mt-1 text-base text-gray-900">{selectedProfile.phone_number}</p>
-                        </div>
-                      )}
-
-                      {selectedProfile.country && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Country</h4>
-                          <p className="mt-1 text-base text-gray-900">{selectedProfile.country}</p>
-                        </div>
-                      )}
-
-                      {selectedProfile.availability && (
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500">Availability</h4>
-                          <div className="flex items-center space-x-2 mt-1">
-                            {getAvailabilityIcon(selectedProfile.availability)}
-                            <p className="text-base text-gray-900 capitalize">
-                              {getAvailabilityText(selectedProfile.availability)}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Investment History */}
-                    <div className="md:col-span-2">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4 uppercase">Investment History</h3>
-                      {investments.length > 0 ? (
-                        <>
-                          {/* Investment Count */}
-                          <div className="mb-4 text-right text-xs text-gray-500">
-                            Showing {((currentInvestmentPage - 1) * investmentsPerPage) + 1} to {Math.min(currentInvestmentPage * investmentsPerPage, investments.length)} of {investments.length} investments
-                          </div>
-
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleInvestmentSort('project')}>
-                                    <div className="flex items-center space-x-1">
-                                      <span>Project</span>
-                                      {investmentSortField === 'project' && (
-                                        <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
-                                      )}
-                                    </div>
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleInvestmentSort('amount')}>
-                                    <div className="flex items-center space-x-1">
-                                      <span>Amount</span>
-                                      {investmentSortField === 'amount' && (
-                                        <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
-                                      )}
-                                    </div>
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleInvestmentSort('status')}>
-                                    <div className="flex items-center space-x-1">
-                                      <span>Status</span>
-                                      {investmentSortField === 'status' && (
-                                        <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
-                                      )}
-                                    </div>
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                      onClick={() => handleInvestmentSort('created_at')}>
-                                    <div className="flex items-center space-x-1">
-                                      <span>Date</span>
-                                      {investmentSortField === 'created_at' && (
-                                        <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
-                                      )}
-                                    </div>
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {getPaginatedInvestments().map((investment) => (
-                                  <tr key={investment.id}>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {investment.proposal?.title || 'Unknown Project'}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {formatCurrency(investment.amount)}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap">
-                                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(investment.status)}`}>
-                                        {investment.status}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                      {new Date(investment.created_at).toLocaleDateString()}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-
-                          {/* Investment Pagination */}
-                          {getTotalInvestmentPages() > 1 && (
-                            <div className="mt-4 flex justify-center items-center space-x-2">
-                              <button
-                                onClick={() => handleInvestmentPageChange(currentInvestmentPage - 1)}
-                                disabled={currentInvestmentPage === 1}
-                                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Previous
-                              </button>
-                              
-                              <div className="flex items-center space-x-1">
-                                {getInvestmentPaginationRange().map((pageNum, index) => (
-                                  pageNum === '...' ? (
-                                    <span key={`ellipsis-${index}`} className="px-2">...</span>
-                                  ) : (
-                                    <button
-                                      key={pageNum}
-                                      onClick={() => handleInvestmentPageChange(pageNum)}
-                                      className={`px-3 py-1 rounded-md ${
-                                        currentInvestmentPage === pageNum
-                                          ? 'bg-black text-white'
-                                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                      }`}
-                                    >
-                                      {pageNum}
-                                    </button>
-                                  )
-                                ))}
-                              </div>
-
-                              <button
-                                onClick={() => handleInvestmentPageChange(currentInvestmentPage + 1)}
-                                disabled={currentInvestmentPage === getTotalInvestmentPages()}
-                                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Next
-                              </button>
+                      {/* Investment History */}
+                      <div className="md:col-span-2">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4 uppercase">Investment History</h3>
+                        {investments.length > 0 ? (
+                          <>
+                            {/* Investment Count */}
+                            <div className="mb-4 text-right text-xs text-gray-500">
+                              Showing {((currentInvestmentPage - 1) * investmentsPerPage) + 1} to {Math.min(currentInvestmentPage * investmentsPerPage, investments.length)} of {investments.length} investments
                             </div>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-gray-500">No investment history available.</p>
-                      )}
+
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleInvestmentSort('investment')}>
+                                      <div className="flex items-center space-x-1">
+                                        <span>Investment</span>
+                                        {investmentSortField === 'investment' && (
+                                          <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                      </div>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleInvestmentSort('amount')}>
+                                      <div className="flex items-center space-x-1">
+                                        <span>Amount</span>
+                                        {investmentSortField === 'amount' && (
+                                          <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                      </div>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleInvestmentSort('status')}>
+                                      <div className="flex items-center space-x-1">
+                                        <span>Status</span>
+                                        {investmentSortField === 'status' && (
+                                          <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                      </div>
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => handleInvestmentSort('created_at')}>
+                                      <div className="flex items-center space-x-1">
+                                        <span>Date</span>
+                                        {investmentSortField === 'created_at' && (
+                                          <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
+                                        )}
+                                      </div>
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {getPaginatedInvestments().map((investment) => (
+                                    <tr key={investment.id}>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {investment.proposal?.title || 'Unknown Investment'}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {formatCurrency(investment.amount)}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap">
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(investment.status)}`}>
+                                          {investment.status}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                        {new Date(investment.created_at).toLocaleDateString()}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Investment Pagination */}
+                            {getTotalInvestmentPages() > 1 && (
+                              <div className="mt-4 flex justify-center items-center space-x-2">
+                                <button
+                                  onClick={() => handleInvestmentPageChange(currentInvestmentPage - 1)}
+                                  disabled={currentInvestmentPage === 1}
+                                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Previous
+                                </button>
+                                
+                                <div className="flex items-center space-x-1">
+                                  {getInvestmentPaginationRange().map((pageNum, index) => (
+                                    pageNum === '...' ? (
+                                      <span key={`ellipsis-${index}`} className="px-2">...</span>
+                                    ) : (
+                                      <button
+                                        key={pageNum}
+                                        onClick={() => handleInvestmentPageChange(pageNum)}
+                                        className={`px-3 py-1 rounded-md ${
+                                          currentInvestmentPage === pageNum
+                                            ? 'bg-black text-white'
+                                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        {pageNum}
+                                      </button>
+                                    )
+                                  ))}
+                                </div>
+
+                                <button
+                                  onClick={() => handleInvestmentPageChange(currentInvestmentPage + 1)}
+                                  disabled={currentInvestmentPage === getTotalInvestmentPages()}
+                                  className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-gray-500">No investment history available.</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex justify-center items-center space-x-2">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            
-            <div className="flex items-center space-x-1">
-              {getPaginationRange().map((pageNum, index) => (
-                pageNum === '...' ? (
-                  <span key={`ellipsis-${index}`} className="px-2">...</span>
-                ) : (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1 rounded-md ${
-                      currentPage === pageNum
-                        ? 'bg-black text-white'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              ))}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center items-center space-x-2">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              
+              <div className="flex items-center space-x-1">
+                {getPaginationRange().map((pageNum, index) => (
+                  pageNum === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2">...</span>
+                  ) : (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`px-3 py-1 rounded-md ${
+                        currentPage === pageNum
+                          ? 'bg-black text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                ))}
+              </div>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
             </div>
-
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        )}
-
-       
-      </div>
+          )}
+        </div>
+      ) : null}
     </Admin>
   );
 }
