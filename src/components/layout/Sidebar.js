@@ -6,12 +6,13 @@ import {
   DocumentTextIcon,
   ArrowLeftOnRectangleIcon,
   BriefcaseIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 
-const navigation = [
+const baseNavigation = [
   { name: 'Dashboard', href: '/account', icon: HomeIcon },
   { name: 'Portfolio', href: '/portfolio', icon: BriefcaseIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
@@ -24,12 +25,22 @@ export default function Sidebar() {
   const pathname = usePathname()
   const supabase = createClientComponentClient()
   const [isNavigating, setIsNavigating] = useState(false)
+  const [userLevel, setUserLevel] = useState(null)
 
   useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         router.push('/auth/signin')
+      } else {
+        // Fetch user level when session exists
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_level')
+          .eq('id', session.user.id)
+          .single()
+        
+        setUserLevel(profile?.user_level || 1)
       }
     }
     checkSession()
@@ -45,6 +56,12 @@ export default function Sidebar() {
     }
     setIsNavigating(false)
   }
+
+  // Add Members link only for level 5 users
+  const navigation = [
+    ...baseNavigation,
+    ...(userLevel === 5 ? [{ name: 'Members', href: '/members', icon: UsersIcon }] : []),
+  ]
 
   return (
     <div className="flex flex-col z-50">
