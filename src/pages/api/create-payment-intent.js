@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       body: req.body,
       headers: req.headers
     });
-
+ 
     const { amount, proposalId, currency = 'usd' } = req.body;
 
     // Validate input parameters
@@ -61,13 +61,14 @@ export default async function handler(req, res) {
     // Create a PaymentIntent with the specified amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
-      currency: 'usd', // Always use USD
+      currency: normalizedCurrency, // Use the provided currency
       metadata: {
         proposalId,
       },
       payment_method_types: ['card'],
       capture_method: 'automatic',
       confirm: false,
+      // This allows the payment method to be used for future off-session payments
       setup_future_usage: 'off_session',
     });
 
