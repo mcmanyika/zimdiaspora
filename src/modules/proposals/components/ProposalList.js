@@ -314,7 +314,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
   );
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full">
       {/* Header Row for Sorting */}
       <div className="hidden md:flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
         <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('title')}>
