@@ -95,19 +95,6 @@ export default function Sidebar() {
           </button>
         ))}
       </nav>
-      {/* Sign Out Button */}
-      <div className="relative md:absolute md:bottom-4 md:left-4 md:right-4">
-        <button
-          className="inline-flex px-4 py-2 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors items-center justify-center md:justify-start"
-          onClick={async () => {
-            await supabase.auth.signOut()
-            router.push('/auth/signin')
-          }}
-        >
-          <ArrowLeftOnRectangleIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
-          <span className="hidden md:group-hover:inline ml-3">Sign Out</span>
-        </button>
-      </div>
     </div>
   )
 } 

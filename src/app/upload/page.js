@@ -17,7 +17,6 @@ function UploadProfile() {
     phoneNumber: '',
     country: '',
     occupation: '',
-    professionalSkills: '',
     availability: false
   });
   const [loading, setLoading] = useState(false);
@@ -25,6 +24,7 @@ function UploadProfile() {
   const [userEmail, setUserEmail] = useState('');
   const [countries, setCountries] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -104,6 +104,10 @@ function UploadProfile() {
         throw fetchError;
       }
 
+      if (existingProfile) {
+        setHasExistingProfile(true);
+      }
+
       let result;
       if (existingProfile) {
         // Update existing profile
@@ -117,7 +121,6 @@ function UploadProfile() {
             phone_number: formData.phoneNumber,
             country: formData.country,
             occupation: formData.occupation,
-            professional_skills: formData.professionalSkills,
             user_level: 1,
             availability: formData.availability ? 'full-time' : 'part-time',
             updated_at: new Date()
@@ -138,7 +141,6 @@ function UploadProfile() {
               phone_number: formData.phoneNumber,
               country: formData.country,
               occupation: formData.occupation,
-              professional_skills: formData.professionalSkills,
               user_level: 1,
               availability: formData.availability ? 'full-time' : 'part-time',
               created_at: new Date()
@@ -160,7 +162,6 @@ function UploadProfile() {
         phoneNumber: '',
         country: '',
         occupation: '',
-        professionalSkills: '',
         availability: false
       });
       
@@ -272,18 +273,6 @@ function UploadProfile() {
           </div>
 
           <div>
-            <textarea
-              name="professionalSkills"
-              value={formData.professionalSkills}
-              onChange={handleInputChange}
-              placeholder="Professional Skills (separate with commas)"
-              className="w-full p-2 border rounded-md"
-              rows="3"
-              required
-            />
-          </div>
-
-          <div>
             <span className="text-sm text-gray-500">Would you like to be considered for active participation in projects?</span>
             <div className="flex items-center mt-2">
               <input
@@ -301,10 +290,10 @@ function UploadProfile() {
 
           <button
             type="submit"
-            disabled={loading || isSubmitting}
+            disabled={loading || isSubmitting || hasExistingProfile}
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Save Profile'}
+            {loading ? 'Saving...' : hasExistingProfile ? 'Profile Already Exists' : 'Save Profile'}
           </button>
         </form>
       </>

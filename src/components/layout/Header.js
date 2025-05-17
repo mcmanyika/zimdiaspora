@@ -5,6 +5,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useGlobalState } from '../../store'
 import { getSupabaseClient } from '../../lib/supabase/client'
+import { 
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/react/24/outline'
 
 function Header() {
   const supabase = getSupabaseClient()
@@ -86,7 +89,7 @@ function Header() {
           Hello <label className="font-thin">,{user?.user_metadata?.full_name}</label> 
         </h1>
         
-        <div className="relative">
+        <div className="relative flex">
           <button
             data-dropdown-button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -97,6 +100,17 @@ function Header() {
                 {user?.email ? user.email[0].toUpperCase() : '?'}
               </span>
             </div>
+          </button>
+          <div className="mx-2 text-gray-300 self-center">|</div>
+          <button
+            className="inline-flex px-1  text-red-600 dark:text-red-400 rounded-lg transition-colors items-center justify-center md:justify-start"
+            onClick={async () => {
+              await supabase.auth.signOut()
+              router.push('/auth/signin')
+            }}
+          >
+            <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-600" />
+            <span className="pl-2 group-hover:inline text-xs text-gray-600">Logout</span>
           </button>
 
           {isDropdownOpen && (

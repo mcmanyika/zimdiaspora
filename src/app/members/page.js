@@ -628,13 +628,6 @@ function MembersPage() {
                           </div>
                         )}
 
-                        {selectedProfile.professional_skills && (
-                          <div>
-                            <h4 className="text-sm font-medium text-gray-500">Professional Skills</h4>
-                            <p className="mt-1 text-base text-gray-900">{selectedProfile.professional_skills}</p>
-                          </div>
-                        )}
-
                         {selectedProfile.gender && (
                           <div>
                             <h4 className="text-sm font-medium text-gray-500">Gender</h4>
