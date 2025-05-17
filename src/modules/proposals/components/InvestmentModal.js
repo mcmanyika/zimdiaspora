@@ -126,12 +126,13 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         }),
       });
 
+      // Clone the response before any read
+      const responseClone = response.clone();
       let responseData;
       try {
         responseData = await response.json();
       } catch (jsonError) {
-        // Clone the response before reading as text
-        const rawText = await response.clone().text();
+        const rawText = await responseClone.text();
         console.error('Failed to parse response:', jsonError);
         console.error('Raw response:', rawText);
         throw new Error('Server response was not in the expected format. Please try again or contact support.');

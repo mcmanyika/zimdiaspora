@@ -5,7 +5,7 @@ import SignIn from './auth/signin/page';
 function App() {
   return (
     <main>
-      <SignIn/>
+      <SignIn />
     </main>
   );
 }
