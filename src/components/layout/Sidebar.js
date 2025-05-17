@@ -68,8 +68,8 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center h-10 mb-8">
         <h1 className="text-gray-700 text-2xl font-bold">
-        <div className="md:group-hover:hidden">AD</div>
-          <div className="hidden md:group-hover:inline">AfroDiaspora</div>
+        <div className="md:group-hover:hidden">KM</div>
+          <div className="hidden md:group-hover:inline uppercase">Kumusha</div>
         </h1>
       </div>
 
