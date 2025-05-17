@@ -35,7 +35,7 @@ function MembersPage() {
   const [userLevel, setUserLevel] = useState(null);
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const investmentsPerPage = 9;
-  const profilesPerPage = 6;
+  const profilesPerPage = 10;
   const supabase = createClientComponentClient();
   const [isAddInvestmentModalOpen, setIsAddInvestmentModalOpen] = useState(false);
   const [newInvestment, setNewInvestment] = useState({
