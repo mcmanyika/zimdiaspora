@@ -54,22 +54,35 @@ export default async function handler(req, res) {
 
     console.log('Creating payment intent with params:', {
       amount,
+      parsedAmount: parseFloat(amount),
+      amountInCents: Math.round(parseFloat(amount) * 100),
       currency: normalizedCurrency,
       proposalId
     });
 
     // Create a PaymentIntent with the specified amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: Math.round(parseFloat(amount) * 100), // Convert to cents, ensuring proper decimal handling
       currency: normalizedCurrency,
       metadata: {
-        proposalId
+        proposalId,
+        originalAmount: amount // Store original amount for reference
       },
-      payment_method_types: ['card'],
       capture_method: 'automatic',
       confirm: false,
       // This allows the payment method to be used for future off-session payments
       setup_future_usage: 'off_session',
+      // Add payment method options for better international support
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
+      // Enable automatic currency conversion
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: 'always'
+      }
     });
 
     console.log('Payment intent created successfully:', {
