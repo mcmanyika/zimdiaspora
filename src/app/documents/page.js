@@ -18,6 +18,8 @@ function DocumentsPage() {
   const [sortDirection, setSortDirection] = useState('desc')
   const [userEmail, setUserEmail] = useState(null)
   const [userLevel, setUserLevel] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [documentToDelete, setDocumentToDelete] = useState(null)
   const documentsPerPage = 6
   const fileInputRef = useRef(null)
   const supabase = createClientComponentClient()
@@ -143,63 +145,7 @@ function DocumentsPage() {
         throw new Error('No active session')
       }
 
-      // First check if the bucket exists
-      const { data: buckets, error: bucketsError } = await supabase
-        .storage
-        .listBuckets()
-
-      if (bucketsError) {
-        console.error('Error checking buckets:', bucketsError)
-        throw new Error('Failed to check storage buckets')
-      }
-
-      console.log('Available buckets:', buckets)
-
-      const bucketExists = buckets.some(b => b.name === 'project-documents')
-      if (!bucketExists) {
-        console.log('Creating project-documents bucket...')
-        const { data: newBucket, error: createError } = await supabase
-          .storage
-          .createBucket('project-documents', {
-            public: false,
-            fileSizeLimit: 5242880, // 5MB
-            allowedMimeTypes: [
-              'application/pdf',
-              'image/jpeg',
-              'image/png',
-              'application/msword',
-              'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            ]
-          })
-
-        if (createError) {
-          console.error('Error creating bucket:', createError)
-          throw new Error('Failed to create storage bucket')
-        }
-
-        console.log('Bucket created successfully:', newBucket)
-      }
-
-      // Try to upload with a simpler path first
-      const testFileName = `test-${Date.now()}.txt`
-      const testContent = 'test content'
-      
-      console.log('Attempting test upload...')
-      const { data: testUpload, error: testError } = await supabase.storage
-        .from('project-documents')
-        .upload(testFileName, testContent)
-
-      if (testError) {
-        console.error('Test upload error:', testError)
-      } else {
-        console.log('Test upload successful:', testUpload)
-        // Clean up test file
-        await supabase.storage
-          .from('project-documents')
-          .remove([testFileName])
-      }
-
-      // Now try the actual file upload
+      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('project-documents')
         .upload(fileName, selectedFile, {
@@ -339,6 +285,8 @@ function DocumentsPage() {
 
       toast.success('Document deleted successfully')
       fetchDocuments()
+      setShowDeleteModal(false)
+      setDocumentToDelete(null)
     } catch (error) {
       console.error('Error deleting document:', error)
       toast.error(error.message || 'Failed to delete document')
@@ -374,6 +322,48 @@ function DocumentsPage() {
           pauseOnHover
           theme="dark"
         />
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && documentToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Delete Document</h3>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setDocumentToDelete(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete &ldquo;{documentToDelete.file_name}&rdquo;? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setDocumentToDelete(null)
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDelete(documentToDelete)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Upload Section - Only visible to user_level 5 */}
         {userLevel === 5 && (
@@ -483,9 +473,8 @@ function DocumentsPage() {
                       {userLevel === 5 ? (
                         <button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this document?')) {
-                              handleDelete(doc)
-                            }
+                            setDocumentToDelete(doc)
+                            setShowDeleteModal(true)
                           }}
                           className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                         >
