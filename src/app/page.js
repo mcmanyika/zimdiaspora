@@ -1,11 +1,11 @@
 "use client";
 
-import SignIn from './auth/signin/page';
+import Dashboard from '../app/account/page'
 
 function App() {
   return (
     <main>
-      <SignIn />
+      <Dashboard />
     </main>
   );
 }
