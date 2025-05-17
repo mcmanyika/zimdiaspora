@@ -37,6 +37,17 @@ function MembersPage() {
   const investmentsPerPage = 9;
   const profilesPerPage = 6;
   const supabase = createClientComponentClient();
+  const [isAddInvestmentModalOpen, setIsAddInvestmentModalOpen] = useState(false);
+  const [newInvestment, setNewInvestment] = useState({
+    proposal_id: '',
+    amount: '',
+    status: 'COMPLETED', // or default status
+    stripe_payment_intent_id: '',
+    transaction_id: '',
+    // add other fields as needed
+  });
+  const [investmentFormError, setInvestmentFormError] = useState('');
+  const [isSubmittingInvestment, setIsSubmittingInvestment] = useState(false);
 
   // Add function to check user level
   const checkUserLevel = async () => {
@@ -398,6 +409,22 @@ function MembersPage() {
     return rangeWithDots;
   };
 
+  const openAddInvestmentModal = () => {
+    setNewInvestment({
+      id: crypto.randomUUID(), // Generate a new UUID
+      amount: '',
+      status: 'COMPLETED',
+      created_at: '',
+      updated_at: '',
+      stripe_payment_intent_id: '',
+      transaction_id: '',
+      proposal_id: '',
+      investor_id: selectedProfile.id,
+      investment_date: '',
+    });
+    setIsAddInvestmentModalOpen(true);
+  };
+
   return (
     <Admin>
       {isCheckingAccess ? null : userLevel === 5 ? (
@@ -653,7 +680,15 @@ function MembersPage() {
 
                       {/* Investment History */}
                       <div className="md:col-span-2">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4 uppercase">Investment History</h3>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-medium text-gray-900 uppercase">Investment History</h3>
+                          <button
+                            onClick={openAddInvestmentModal}
+                            className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                          >
+                            Add Investment
+                          </button>
+                        </div>
                         {investments.length > 0 ? (
                           <>
                             {/* Investment Count */}
@@ -816,6 +851,179 @@ function MembersPage() {
               >
                 Next
               </button>
+            </div>
+          )}
+
+          {isAddInvestmentModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center">
+              <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+                <h2 className="text-xl font-bold mb-4">Add Investment</h2>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsSubmittingInvestment(true);
+                    setInvestmentFormError('');
+                    try {
+                      const now = new Date().toISOString();
+                      const { error } = await supabase
+                        .from('investments')
+                        .insert([
+                          {
+                            ...newInvestment,
+                            investor_id: selectedProfile.id,
+                            created_at: now,
+                            updated_at: now,
+                          }
+                        ]);
+                      if (error) throw error;
+                      setIsAddInvestmentModalOpen(false);
+                      setNewInvestment({
+                        id: '',
+                        amount: '',
+                        status: 'COMPLETED',
+                        created_at: '',
+                        updated_at: '',
+                        stripe_payment_intent_id: '',
+                        transaction_id: '',
+                        proposal_id: '',
+                        investor_id: selectedProfile.id,
+                        investment_date: '',
+                      });
+                      await fetchInvestments(selectedProfile.id);
+                    } catch (err) {
+                      setInvestmentFormError(err.message);
+                    } finally {
+                      setIsSubmittingInvestment(false);
+                    }
+                  }}
+                >
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">ID (UUID)</label>
+                    <input
+                      type="text"
+                      value={newInvestment.id || ''}
+                      readOnly
+                      className="w-full border px-3 py-2 rounded bg-gray-100"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Amount</label>
+                    <input
+                      type="number"
+                      value={newInvestment.amount || ''}
+                      onChange={e => setNewInvestment({ ...newInvestment, amount: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Status</label>
+                    <select
+                      value={newInvestment.status || 'COMPLETED'}
+                      onChange={e => setNewInvestment({ ...newInvestment, status: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                    >
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="PENDING">PENDING</option>
+                      <option value="FAILED">FAILED</option>
+                      <option value="REFUNDED">REFUNDED</option>
+                    </select>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Created At</label>
+                    <input
+                      type="text"
+                      value={newInvestment.created_at || ''}
+                      onChange={e => setNewInvestment({ ...newInvestment, created_at: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Updated At</label>
+                    <input
+                      type="text"
+                      value={newInvestment.updated_at || ''}
+                      onChange={e => setNewInvestment({ ...newInvestment, updated_at: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Stripe Payment Intent ID</label>
+                    <input
+                      type="text"
+                      value={newInvestment.stripe_payment_intent_id || ''}
+                      onChange={e => setNewInvestment({ 
+                        ...newInvestment, 
+                        stripe_payment_intent_id: e.target.value,
+                        transaction_id: e.target.value // Auto-populate transaction_id with the same value
+                      })}
+                      className="w-full border px-3 py-2 rounded"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Transaction ID</label>
+                    <input
+                      type="text"
+                      value={newInvestment.transaction_id || ''}
+                      readOnly
+                      className="w-full border px-3 py-2 rounded bg-gray-100"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Proposal ID</label>
+                    <input
+                      type="text"
+                      value={newInvestment.proposal_id || ''}
+                      onChange={e => setNewInvestment({ ...newInvestment, proposal_id: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Investor ID</label>
+                    <input
+                      type="text"
+                      value={newInvestment.investor_id || ''}
+                      readOnly
+                      className="w-full border px-3 py-2 rounded bg-gray-100"
+                      required
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Investment Date</label>
+                    <input
+                      type="text"
+                      value={newInvestment.investment_date || ''}
+                      onChange={e => setNewInvestment({ ...newInvestment, investment_date: e.target.value })}
+                      className="w-full border px-3 py-2 rounded"
+                      required
+                    />
+                  </div>
+                  {investmentFormError && (
+                    <div className="mb-2 text-red-600 text-sm">{investmentFormError}</div>
+                  )}
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddInvestmentModalOpen(false)}
+                      className="px-4 py-2 bg-gray-200 rounded"
+                      disabled={isSubmittingInvestment}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-black text-white rounded"
+                      disabled={isSubmittingInvestment}
+                    >
+                      {isSubmittingInvestment ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>
