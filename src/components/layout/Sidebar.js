@@ -68,7 +68,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="flex items-center justify-center h-16">
         <h1 className="text-gray-700 text-2xl font-bold">
-        <span className="hidden md:group-hover:hidden">AD</span>
+        <span className=" md:group-hover:hidden">AD</span>
           <span className="hidden md:group-hover:inline">AfroDiaspora</span>
         </h1>
       </div>

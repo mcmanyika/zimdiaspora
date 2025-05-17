@@ -329,11 +329,11 @@ export default function ProposalList({ showInvestButton = true, category = null,
       </div>
 
       {/* Proposal Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 ${currentProposals.length === 1 ? 'w-full' : 'md:grid-cols-2 lg:grid-cols-2'} gap-6`}>
         {currentProposals.map((proposal) => (
           <div
             key={proposal.id}
-            className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-100"
+            className="bg-white cursor-pointer rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-100"
             onClick={() => setSelectedProposal(proposal)}
           >
             <div className="p-2">
