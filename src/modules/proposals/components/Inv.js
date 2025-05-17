@@ -10,24 +10,35 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [investmentDetails, setInvestmentDetails] = useState(null);
+  const [currency, setCurrency] = useState('usd');
   const supabase = createClientComponentClient();
+
+  // Supported currencies
+  const supportedCurrencies = [
+    { code: 'usd', symbol: '$', name: 'US Dollar' },
+    { code: 'eur', symbol: '€', name: 'Euro' },
+    { code: 'gbp', symbol: '£', name: 'British Pound' },
+    { code: 'cad', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'aud', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'aed', symbol: 'د.إ', name: 'UAE Dirham' },
+  ];
 
   // Error messages for common international card issues
   const getErrorMessage = (error) => {
     if (error.type === 'card_error') {
       switch (error.code) {
         case 'card_not_supported':
-          return 'This card type is not supported. Please try a different card or use the Stripe Checkout link below.';
+          return 'This card type is not supported. Please try a different card.';
         case 'currency_not_supported':
-          return 'This card does not support USD transactions. Please try a different card or use the Stripe Checkout link below.';
+          return 'This card does not support the selected currency. Please try a different card or currency.';
         case 'insufficient_funds':
           return 'Your card has insufficient funds. Please try a different card or amount.';
         case 'declined':
-          return 'Your card was declined. This could be due to international transaction restrictions. Please try a different card or use the Stripe Checkout link below.';
+          return 'Your card was declined. Please check with your bank or try a different card.';
         case 'processing_error':
-          return 'There was an error processing your card. This could be due to international transaction restrictions. Please try again or use the Stripe Checkout link below.';
+          return 'There was an error processing your card. Please try again or use a different card.';
         default:
-          return `${error.message} If this persists, please use the Stripe Checkout link below.`;
+          return error.message;
       }
     }
     return error.message;
@@ -93,6 +104,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         body: JSON.stringify({
           amount: parseFloat(amount),
           proposalId: proposal.id,
+          currency: currency,
         }),
       });
 
@@ -291,14 +303,25 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Investment Amount (USD)
+              Investment Amount
             </label>
-            <div className="mt-1">
+            <div className="mt-1 flex rounded-md shadow-sm">
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-gray-500 text-sm"
+              >
+                {supportedCurrencies.map((curr) => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.symbol} {curr.name}
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="flex-1 px-4 py-2 block w-full rounded-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+                className="flex-1 px-4 py-2 block w-full rounded-r-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
                 required
                 min="1"
                 step="0.01"
