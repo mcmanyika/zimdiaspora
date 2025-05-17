@@ -66,10 +66,10 @@ export default function Sidebar() {
   return (
     <div className="flex flex-col z-50">
       {/* Logo */}
-      <div className="flex items-center justify-center h-16">
+      <div className="flex items-center justify-center h-10 mb-8">
         <h1 className="text-gray-700 text-2xl font-bold">
-        <span className=" md:group-hover:hidden">AD</span>
-          <span className="hidden md:group-hover:inline">AfroDiaspora</span>
+        <div className="md:group-hover:hidden">AD</div>
+          <div className="hidden md:group-hover:inline">AfroDiaspora</div>
         </h1>
       </div>
 
