@@ -101,7 +101,8 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         responseData = await response.json();
       } catch (jsonError) {
         console.error('Failed to parse response:', jsonError);
-        throw new Error('Invalid response from server');
+        console.error('Raw response:', await response.text());
+        throw new Error('Server response was not in the expected format. Please try again or contact support.');
       }
 
       if (!response.ok) {
@@ -115,9 +116,9 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
         if (response.status === 400) {
           throw new Error(responseData.message || 'Invalid payment details');
         } else if (response.status === 500) {
-          throw new Error(responseData.error?.message || 'Server error occurred');
+          throw new Error(responseData.error?.message || 'Server error occurred. Please try again later.');
         } else {
-          throw new Error(responseData.message || 'Failed to create payment intent');
+          throw new Error(responseData.message || 'Failed to create payment intent. Please try again.');
         }
       }
 
@@ -125,7 +126,7 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
 
       if (!clientSecret || !paymentIntentId) {
         console.error('Invalid payment intent response:', responseData);
-        throw new Error('Invalid response from payment intent creation');
+        throw new Error('Server returned invalid payment details. Please try again or contact support.');
       }
 
       toast.info('Validating card details...');
