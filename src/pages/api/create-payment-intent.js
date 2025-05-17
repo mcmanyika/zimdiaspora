@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
 
     // Validate currency
-    const validCurrencies = ['usd', 'eur', 'gbp', 'cad', 'aud'];
+    const validCurrencies = ['usd', 'eur', 'gbp', 'cad', 'aud', 'aed'];
     const normalizedCurrency = currency.toLowerCase();
     if (!validCurrencies.includes(normalizedCurrency)) {
       console.error('Invalid currency:', currency);
@@ -61,9 +61,9 @@ export default async function handler(req, res) {
     // Create a PaymentIntent with the specified amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
-      currency: normalizedCurrency, // Use the provided currency
+      currency: normalizedCurrency,
       metadata: {
-        proposalId,
+        proposalId
       },
       payment_method_types: ['card'],
       capture_method: 'automatic',

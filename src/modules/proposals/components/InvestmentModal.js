@@ -26,7 +26,6 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [investmentDetails, setInvestmentDetails] = useState(null);
-  const [selectedCountry, setSelectedCountry] = useState('');
   const supabase = createClientComponentClient();
 
   // Error messages for common international card issues
@@ -95,19 +94,6 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
 
     if (!amount || amount <= 0) {
       toast.error('Please enter a valid investment amount');
-      setLoading(false);
-      return;
-    }
-
-    if (!selectedCountry) {
-      toast.error('Please select your country');
-      setLoading(false);
-      return;
-    }
-
-    // Check if the country is supported
-    if (!SUPPORTED_COUNTRIES.some(country => country.code === selectedCountry)) {
-      toast.error('Sorry, we currently do not support payments from your country. Please use the Stripe Checkout link below.');
       setLoading(false);
       return;
     }
@@ -337,27 +323,6 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
                 min="1"
                 step="0.01"
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Country
-            </label>
-            <div className="mt-1">
-              <select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                className="flex-1 px-4 py-2 block w-full rounded-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-                required
-              >
-                <option value="">Select your country</option>
-                {SUPPORTED_COUNTRIES.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
             </div>
           </div>
 
