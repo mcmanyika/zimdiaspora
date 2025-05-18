@@ -265,7 +265,7 @@ export default function MembershipList({ showInvestButton = true, showOnlyInvest
               {showInvestButton && proposal.status === 'active' && (
                 <button
                   onClick={(e) => handleInvestClick(proposal, e)}
-                  className="rounded-md p-2 m-2  bg-gray-800 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                  className="rounded-md p-2 m-2  bg-gray-800 text-white hover:bg-gray-500 transition-colors flex items-center gap-2"
                 >
                   <PersonIcon fontSize="small" />
                   Membership Payment
