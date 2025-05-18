@@ -268,7 +268,7 @@ export default function MembershipList({ showInvestButton = true, showOnlyInvest
                   className="rounded-md p-2 m-2  bg-gray-800 text-white hover:bg-gray-500 transition-colors flex items-center gap-2"
                 >
                   <PersonIcon fontSize="small" />
-                  Membership Payment
+                  Membership Payments
                 </button>
               )}
           </div>
