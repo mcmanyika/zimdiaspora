@@ -87,9 +87,7 @@ export default function Sidebar() {
             }`}
           >
             <item.icon className={`h-8 w-8 ${
-              item.href === '/youtube' 
-                ? 'text-red-500'
-                : pathname === item.href 
+             pathname === item.href 
                   ? 'text-white' 
                   : 'text-gray-400 group-hover:text-gray-300'
             }`} />
