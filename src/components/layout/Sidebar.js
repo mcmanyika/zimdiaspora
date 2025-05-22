@@ -17,7 +17,7 @@ const baseNavigation = [
   { name: 'Portfolio', href: '/portfolio', icon: BriefcaseIcon },
   { name: 'My Profile', href: '/profile', icon: UserIcon },
   { name: 'Documents', href: '/documents', icon: DocumentTextIcon },
-  { name: 'Project Updates', href: '/youtube', icon: VideoCameraIcon },
+  { name: 'Latest Updates', href: '/youtube', icon: VideoCameraIcon },
 ]
 
 export default function Sidebar() {
@@ -87,7 +87,11 @@ export default function Sidebar() {
             }`}
           >
             <item.icon className={`h-8 w-8 ${
-              pathname === item.href ? 'text-white' : 'text-gray-400 group-hover:text-gray-300'
+              item.href === '/youtube' 
+                ? 'text-red-500'
+                : pathname === item.href 
+                  ? 'text-white' 
+                  : 'text-gray-400 group-hover:text-gray-300'
             }`} />
             <span className="hidden md:group-hover:inline ml-3">
               {item.name}

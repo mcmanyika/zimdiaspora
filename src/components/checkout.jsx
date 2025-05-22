@@ -41,7 +41,7 @@ function PaymentForm({ proposalId, investorId, amount }) {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/success`,
+          return_url: `${window.location.origin}/success?amount=${amount}`,
         },
         redirect: 'if_required'
       });
@@ -53,13 +53,7 @@ function PaymentForm({ proposalId, investorId, amount }) {
           setMessage("An unexpected error occurred. Please try again later.");
         }
       } else if (paymentIntent) {
-        // Log the data being sent
-        console.log('Payment data:', {
-          paymentIntentId: paymentIntent.id,
-          proposalId,
-          investorId,
-          amount
-        });
+        
 
         // Validate required fields
         if (!paymentIntent.id || !proposalId || !investorId || !amount) {

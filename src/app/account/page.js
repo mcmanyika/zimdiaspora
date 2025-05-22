@@ -18,7 +18,7 @@ const CATEGORIES = [
   { name: "TOURISM", icon: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
   { name: "ENERGY", icon: "M13 10V3L4 14h7v7l9-11h-7z" },
   { name: "MANUFACTURING", icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" },
-  // { name: "MEMBERSHIP", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
+  { name: "MEMBERSHIP", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
 ];
 
 const Dashboard = () => {
@@ -174,9 +174,53 @@ const Dashboard = () => {
 
       try {
         setIsLoading(true);
+
+        if (selectedTab === "MEMBERSHIP") {
+          // 1. Get all MEMBERSHIP proposal IDs
+          const { data: membershipProposals, error: proposalError } = await supabase
+            .from('proposals')
+            .select('id, budget, title, amount_raised, category')
+            .eq('category', 'MEMBERSHIP');
+
+          if (proposalError) throw proposalError;
+          if (!membershipProposals || membershipProposals.length === 0) {
+            setProposalData(null);
+            return;
+          }
+
+          const proposalIds = membershipProposals.map(p => p.id);
+
+          // 2. Fetch all successful transactions for these proposals
+          const { data: transactions, error: transactionsError } = await supabase
+            .from('transactions')
+            .select('amount, metadata')
+            .eq('status', 'succeeded');
+
+          if (transactionsError) throw transactionsError;
+
+          // 3. Filter transactions for membership proposals
+          const filtered = transactions.filter(
+            tx => proposalIds.includes(tx.metadata?.proposal_id)
+          );
+
+          // 4. Count unique investors and sum amounts
+          const uniqueInvestors = new Set(filtered.map(tx => tx.metadata?.investor_id)).size;
+          const totalRaised = filtered.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+          const totalBudget = membershipProposals.reduce((sum, p) => sum + (p.budget || 0), 0);
+
+          setProposalData({
+            // Use the first proposal for title/category, but override budget/amount_raised/investor_count
+            ...membershipProposals[0],
+            budget: totalBudget,
+            amount_raised: totalRaised,
+            investor_count: uniqueInvestors
+          });
+          return;
+        }
+
         let query = supabase
           .from('proposals')
-          .select('id, title, budget, amount_raised, category')
+          .select('id, title, budget, amount_raised, category, investor_count')
           .eq('status', 'active');
 
         if (selectedProjectId) {
@@ -199,23 +243,30 @@ const Dashboard = () => {
           return;
         }
 
-        // Fetch all completed investments for this proposal to calculate amount_raised
-        const { data: investments, error: investmentsError } = await supabase
-          .from('investments')
-          .select('investor_id, amount')
-          .eq('proposal_id', proposal[0].id)
-          .eq('status', 'COMPLETED');
+        // Fetch all successful transactions for this proposal
+        const { data: transactions, error: transactionsError } = await supabase
+          .from('transactions')
+          .select('amount, metadata')
+          .eq('status', 'succeeded');
 
-        if (investmentsError) {
-          throw investmentsError;
+        if (transactionsError) {
+          throw transactionsError;
         }
 
-        const uniqueInvestors = new Set(investments.map(inv => inv.investor_id)).size;
-        const totalRaised = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+        // Filter transactions for the current proposal
+        const filtered = transactions.filter(
+          tx => tx.metadata?.proposal_id === proposal[0].id
+        );
+
+        // Calculate capital raised
+        const capitalRaised = filtered.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+        // Calculate unique investors
+        const uniqueInvestors = new Set(filtered.map(tx => tx.metadata?.investor_id)).size;
 
         setProposalData({
           ...proposal[0],
-          amount_raised: totalRaised, // Use calculated sum
+          amount_raised: capitalRaised,
           investor_count: uniqueInvestors
         });
       } catch (error) {
@@ -476,7 +527,7 @@ const Dashboard = () => {
         <div className="w-full bg-white rounded-xl shadow-lg p-8">
           {/* Category Tabs */}
           <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               {CATEGORIES.map((tab) => (
                 <button
                   key={tab.name}
@@ -503,18 +554,9 @@ const Dashboard = () => {
               ))}
             </div>
 
-            <div className="flex justify-center items-center">
+            {/* <div className="flex justify-center items-center">
               {userStats.totalInvestment === 0 && <MembershipList />}
-            <button 
-                onClick={() => setIsModalOpen(true)}
-                className="p-2 m-2 bg-gradient-to-r from-red-500 to-red-600 text-white  text-lg text-center rounded-lg font-medium shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 hover:from-red-600 hover:to-red-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Latest Update
-              </button>
-            </div>
+            </div> */}
             
           </div>
 

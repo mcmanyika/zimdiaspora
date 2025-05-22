@@ -380,7 +380,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
               </div>
 
               {/* Action Button */}
-              {showInvestButton && proposal.status === 'active' && (
+              {showInvestButton && proposal.status === 'active' && !hasMembershipPayment && (
                 <div className="mt-6">
                   <button
                     onClick={(e) => handleInvestClick(proposal, e)}
