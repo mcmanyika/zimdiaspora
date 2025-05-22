@@ -67,8 +67,8 @@ const Dashboard = () => {
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
   // Optimized user stats update function
-  const updateUserStats = useCallback((investments, selectedId) => {
-    if (!investments || investments.length === 0) {
+  const updateUserStats = useCallback(async (investments, selectedId) => {
+    if (!user || !selectedId) {
       setUserStats({
         totalInvestment: 0,
         numberOfProjects: 0,
@@ -77,25 +77,35 @@ const Dashboard = () => {
       return;
     }
 
+    // Calculate totalInvestment and numberOfProjects from investments (all proposals)
     const stats = {
       totalInvestment: 0,
       numberOfProjects: 0,
       currentProjectInvestment: 0
     };
-
     const uniqueProjects = new Set();
-    
     investments.forEach(inv => {
       stats.totalInvestment += inv.amount;
       uniqueProjects.add(inv.proposal_id);
-      if (inv.proposal_id === selectedId) {
-        stats.currentProjectInvestment += inv.amount;
-      }
     });
-
     stats.numberOfProjects = uniqueProjects.size;
+
+    // Calculate currentProjectInvestment from transactions (real-time, user-specific)
+    const { data: userTx, error: userTxError } = await supabase
+      .from('transactions')
+      .select('amount, metadata')
+      .eq('status', 'succeeded');
+    if (!userTxError && userTx) {
+      stats.currentProjectInvestment = userTx
+        .filter(tx =>
+          tx.metadata?.proposal_id === selectedId &&
+          tx.metadata?.investor_id === user.id
+        )
+        .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+    }
+
     setUserStats(stats);
-  }, []);
+  }, [user, supabase]);
 
   // Improved auth subscription handling
   useEffect(() => {
@@ -150,7 +160,7 @@ const Dashboard = () => {
         }
 
         setUserInvestments(investments);
-        updateUserStats(investments, selectedProjectId);
+        await updateUserStats(investments, selectedProjectId);
       } catch (error) {
         console.error('Error fetching user investments:', error);
         setError(error.message);

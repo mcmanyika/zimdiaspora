@@ -185,25 +185,67 @@ function MembersPage() {
   // Add function to fetch investments
   const fetchInvestments = async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('investments')
-        .select(`
-          *,
-          proposal:proposals(
-            id,
-            title,
-            status,
-            amount_raised,
-            budget
-          )
-        `)
-        .eq('investor_id', userId)
-        .order('created_at', { ascending: false });
+      console.log('Fetching investments for user:', userId);
+      
+      // First, let's verify the user ID is valid
+      if (!userId) {
+        throw new Error('Invalid user ID');
+      }
 
-      if (error) throw error;
-      setInvestments(data || []);
+      // Query transactions with a simpler structure first
+      const { data: transactions, error: txError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('status', 'succeeded');
+
+      if (txError) {
+        console.error('Error fetching transactions:', txError);
+        throw txError;
+      }
+
+      console.log('Raw transactions:', transactions);
+
+      // Filter transactions for this user
+      const userTransactions = transactions?.filter(tx => 
+        tx.metadata?.investor_id === userId
+      ) || [];
+
+      console.log('Filtered user transactions:', userTransactions);
+
+      // Now fetch the related proposals
+      const proposalIds = [...new Set(userTransactions.map(tx => tx.metadata?.proposal_id))];
+      
+      const { data: proposals, error: proposalError } = await supabase
+        .from('proposals')
+        .select('id, title, status, amount_raised, budget')
+        .in('id', proposalIds);
+
+      if (proposalError) {
+        console.error('Error fetching proposals:', proposalError);
+        throw proposalError;
+      }
+
+      // Combine the data
+      const transformedData = userTransactions.map(transaction => ({
+        id: transaction.id,
+        amount: transaction.amount,
+        status: transaction.status,
+        payment_method: transaction.payment_method,
+        created_at: transaction.created_at,
+        proposal: proposals?.find(p => p.id === transaction.metadata?.proposal_id)
+      }));
+
+      console.log('Transformed data:', transformedData);
+      setInvestments(transformedData);
     } catch (err) {
-      console.error('Error fetching investments:', err);
+      console.error('Error in fetchInvestments:', {
+        message: err.message,
+        details: err.details,
+        hint: err.hint,
+        code: err.code,
+        stack: err.stack
+      });
+      setError(err.message || 'Failed to fetch investments');
     }
   };
 
@@ -679,10 +721,10 @@ function MembersPage() {
                                       </div>
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                        onClick={() => handleInvestmentSort('status')}>
+                                        onClick={() => handleInvestmentSort('payment_method')}>
                                       <div className="flex items-center space-x-1">
-                                        <span>Status</span>
-                                        {investmentSortField === 'status' && (
+                                        <span>Payment Method</span>
+                                        {investmentSortField === 'payment_method' && (
                                           <span>{investmentSortOrder === 'asc' ? '↑' : '↓'}</span>
                                         )}
                                       </div>
@@ -707,10 +749,8 @@ function MembersPage() {
                                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                         {formatCurrency(investment.amount)}
                                       </td>
-                                      <td className="px-4 py-3 whitespace-nowrap">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(investment.status)}`}>
-                                          {investment.status}
-                                        </span>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {investment.payment_method || 'Credit Card'}
                                       </td>
                                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(investment.created_at).toLocaleDateString()}
