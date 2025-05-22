@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Admin from "../../components/layout/Admin";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { withAuth } from '../../utils/withAuth'
@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import MembershipList from "../../modules/proposals/components/MembershipList";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CATEGORIES = [
   { name: "REAL ESTATE", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
@@ -20,7 +22,12 @@ const CATEGORIES = [
 ];
 
 const Dashboard = () => {
-  const [selectedTab, setSelectedTab] = useState("REAL ESTATE");
+  const [selectedTab, setSelectedTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("selectedTab") || "REAL ESTATE";
+    }
+    return "REAL ESTATE";
+  });
   const [user, setUser] = useState(null);
   const [proposalData, setProposalData] = useState(null);
   const [showOnlyInvested, setShowOnlyInvested] = useState(false);
@@ -33,6 +40,7 @@ const Dashboard = () => {
     currentProjectInvestment: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [userInvestments, setUserInvestments] = useState([]);
@@ -58,114 +66,105 @@ const Dashboard = () => {
   const [hasMounted, setHasMounted] = useState(false);
   const [isCategoryLoading, setIsCategoryLoading] = useState(false);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-    }
-    getUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  useEffect(() => {
-    const fetchUserInvestments = async () => {
-      if (!user) return;
-      try {
-        const { data: investments, error } = await supabase
-          .from('investments')
-          .select(`amount, proposal_id, status, proposals ( id, title, category, budget, amount_raised )`)
-          .eq('investor_id', user.id)
-          .eq('status', 'COMPLETED');
-        if (error) throw error;
-        setUserInvestments(investments || []);
-      } catch (error) {
-        console.error('Error fetching user investments:', error);
-      }
-    };
-    fetchUserInvestments();
-  }, [user, supabase]);
-
-  useEffect(() => {
-    if (!userInvestments || userInvestments.length === 0) {
+  // Optimized user stats update function
+  const updateUserStats = useCallback((investments, selectedId) => {
+    if (!investments || investments.length === 0) {
       setUserStats({
         totalInvestment: 0,
         numberOfProjects: 0,
         currentProjectInvestment: 0
       });
-      setSelectedTab("REAL ESTATE");
       return;
     }
-    // Unique projects
-    const uniqueProjects = userInvestments.reduce((acc, inv) => {
-      if (inv.proposals && !acc.find(p => p.id === inv.proposals.id)) {
-        acc.push(inv.proposals);
+
+    const stats = {
+      totalInvestment: 0,
+      numberOfProjects: 0,
+      currentProjectInvestment: 0
+    };
+
+    const uniqueProjects = new Set();
+    
+    investments.forEach(inv => {
+      stats.totalInvestment += inv.amount;
+      uniqueProjects.add(inv.proposal_id);
+      if (inv.proposal_id === selectedId) {
+        stats.currentProjectInvestment += inv.amount;
       }
-      return acc;
-    }, []);
-    // Total investment
-    const totalInvestment = userInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-    // Number of unique projects
-    const numberOfProjects = uniqueProjects.length;
-    // Current project investment
-    let currentProjectInvestment = 0;
-    if (selectedProjectId) {
-      currentProjectInvestment = userInvestments
-        .filter(inv => inv.proposal_id === selectedProjectId)
-        .reduce((sum, inv) => sum + inv.amount, 0);
-    }
-    setUserStats({
-      totalInvestment,
-      numberOfProjects,
-      currentProjectInvestment
     });
-    // Set selected project and tab if not set
-    if (!selectedProjectId && uniqueProjects.length > 0) {
-      setSelectedProjectId(uniqueProjects[0].id);
-      setSelectedTab(uniqueProjects[0].category);
-    }
-  }, [userInvestments, selectedProjectId]);
 
-  // Helper to get userInvestedProjects for selectedTab
-  const userInvestedProjects = useMemo(() => {
-    return userInvestments
-      .map(inv => inv.proposals)
-      .filter((proj, idx, arr) => proj && arr.findIndex(p => p.id === proj.id) === idx && proj.category === selectedTab);
-  }, [userInvestments, selectedTab]);
+    stats.numberOfProjects = uniqueProjects.size;
+    setUserStats(stats);
+  }, []);
 
-  // Centralize tab/project selection logic
-  const handleTabSelect = async (tab) => {
-    try {
-      setIsCategoryLoading(true);
-      setSelectedTab(tab);
-      
-      // Find first project in this tab from all user investments
-      const project = userInvestments
-        .map(inv => inv.proposals)
-        .find(p => p && p.category === tab);
+  // Improved auth subscription handling
+  useEffect(() => {
+    let subscription;
+    
+    const setupAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+
+        const { data } = await supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user || null);
+        });
         
-      if (project) {
-        setSelectedProjectId(project.id);
-      } else {
-        setSelectedProjectId(null);
-        // Reset proposal data when no project is found
-        setProposalData(null);
+        subscription = data?.subscription;
+      } catch (error) {
+        console.error('Auth error:', error);
+        setError(error.message);
+        toast.error('Authentication error: ' + error.message);
       }
-    } catch (error) {
-      console.error('Error switching category:', error);
-    } finally {
-      setIsCategoryLoading(false);
-    }
-  };
-  const handleProjectSelect = (project) => {
-    setSelectedProjectId(project.id);
-    setSelectedTab(project.category);
-  };
+    };
 
+    setupAuth();
+
+    return () => {
+      if (subscription?.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [supabase]);
+
+  // Improved user investments fetching
+  useEffect(() => {
+    const fetchUserInvestments = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const { data: investments, error } = await supabase
+          .from('investments')
+          .select(`amount, proposal_id, status, proposals ( id, title, category, budget, amount_raised )`)
+          .eq('investor_id', user.id)
+          .eq('status', 'COMPLETED');
+
+        if (error) {
+          throw error;
+        }
+
+        if (!investments) {
+          setUserInvestments([]);
+          return;
+        }
+
+        setUserInvestments(investments);
+        updateUserStats(investments, selectedProjectId);
+      } catch (error) {
+        console.error('Error fetching user investments:', error);
+        setError(error.message);
+        setUserInvestments([]);
+        toast.error('Failed to fetch investments: ' + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserInvestments();
+  }, [user, supabase, selectedProjectId, updateUserStats]);
+
+  // Improved proposal data fetching
   useEffect(() => {
     const fetchProposalData = async () => {
       if (!user) {
@@ -192,37 +191,38 @@ const Dashboard = () => {
         const { data: proposal, error: proposalError } = await query;
 
         if (proposalError) {
-          console.error('Supabase error:', proposalError);
-          return;
+          throw proposalError;
         }
 
         if (!proposal || proposal.length === 0) {
           setProposalData(null);
-          setIsLoading(false);
           return;
         }
 
-        // Get the actual investor count from investments table
+        // Fetch all completed investments for this proposal to calculate amount_raised
         const { data: investments, error: investmentsError } = await supabase
           .from('investments')
-          .select('investor_id')
+          .select('investor_id, amount')
           .eq('proposal_id', proposal[0].id)
           .eq('status', 'COMPLETED');
 
         if (investmentsError) {
-          console.error('Error fetching investments:', investmentsError);
-          return;
+          throw investmentsError;
         }
 
-        // Calculate unique investors
         const uniqueInvestors = new Set(investments.map(inv => inv.investor_id)).size;
+        const totalRaised = investments.reduce((sum, inv) => sum + (inv.amount || 0), 0);
 
         setProposalData({
           ...proposal[0],
+          amount_raised: totalRaised, // Use calculated sum
           investor_count: uniqueInvestors
         });
       } catch (error) {
-        console.error('Error fetching proposal data:', error.message || error);
+        console.error('Error fetching proposal data:', error);
+        setError(error.message);
+        setProposalData(null);
+        toast.error('Failed to fetch proposal data: ' + error.message);
       } finally {
         setIsLoading(false);
       }
@@ -231,6 +231,7 @@ const Dashboard = () => {
     fetchProposalData();
   }, [supabase, selectedTab, user, selectedProjectId]);
 
+  // Improved document fetching
   useEffect(() => {
     const fetchDocuments = async () => {
       if (!user) return;
@@ -246,12 +247,16 @@ const Dashboard = () => {
         setDocuments(data || []);
       } catch (error) {
         console.error('Error fetching documents:', error);
+        setError(error.message);
+        setDocuments([]);
+        toast.error('Failed to fetch documents: ' + error.message);
       }
     };
 
     fetchDocuments();
   }, [user, supabase]);
 
+  // Improved document action handling
   const handleDocumentAction = async (document, action) => {
     try {
       if (action === 'download') {
@@ -261,7 +266,6 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        // Create download link
         const url = URL.createObjectURL(data);
         const link = document.createElement('a');
         link.href = url;
@@ -270,6 +274,7 @@ const Dashboard = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        toast.success('Document downloaded successfully');
       } else if (action === 'view') {
         const { data, error } = await supabase.storage
           .from('project-documents')
@@ -281,43 +286,133 @@ const Dashboard = () => {
           ...document,
           data
         });
+        toast.success('Document loaded successfully');
       }
     } catch (error) {
       console.error('Error handling document:', error);
+      toast.error('Failed to process document: ' + error.message);
     }
   };
 
-  // Calculate ownership share percentage
-  const ownershipShare = useMemo(() => {
-    if (!proposalData?.amount_raised || !userStats.currentProjectInvestment) return 0;
-    return ((userStats.currentProjectInvestment / proposalData.amount_raised) * 100).toFixed(1);
-  }, [proposalData?.amount_raised, userStats.currentProjectInvestment]);
+  // Improved tab selection handling
+  const handleTabSelect = async (tab) => {
+    try {
+      setIsCategoryLoading(true);
+      setSelectedTab(tab);
+      setSelectedProjectId(null);
+      setProposalData(null);
+    } catch (error) {
+      console.error('Error switching category:', error);
+      setError(error.message);
+    } finally {
+      setIsCategoryLoading(false);
+    }
+  };
 
+  // Automatically select the first project in the selected category by default
   useEffect(() => {
-    // Add screen size listener
+    const projectsInCategory = userInvestments
+      .map(inv => inv.proposals)
+      .filter(proj => proj && proj.category === selectedTab);
+
+    if (projectsInCategory.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(projectsInCategory[0].id);
+    }
+  }, [userInvestments, selectedTab, selectedProjectId]);
+
+  // Improved project selection handling
+  const handleProjectSelect = (project) => {
+    setSelectedProjectId(project.id);
+    setSelectedTab(project.category);
+  };
+
+  // Screen size handling
+  useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 768); // 768px is typical mobile breakpoint
+      setIsMobile(window.innerWidth < 768);
     };
 
-    // Initial check
     checkScreenSize();
-
-    // Add event listener
     window.addEventListener('resize', checkScreenSize);
-
-    // Cleanup
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
+  // Component mount handling
   useEffect(() => {
     setHasMounted(true);
   }, []);
+
+  // Calculate ownership share percentage with error handling
+  const ownershipShare = useMemo(() => {
+    try {
+      if (!proposalData?.amount_raised || !userStats.currentProjectInvestment) return 0;
+      const share = (userStats.currentProjectInvestment / proposalData.amount_raised) * 100;
+      return isNaN(share) ? 0 : share.toFixed(1);
+    } catch (error) {
+      console.error('Error calculating ownership share:', error);
+      return 0;
+    }
+  }, [proposalData?.amount_raised, userStats.currentProjectInvestment]);
+
+  // Helper to get userInvestedProjects with error handling
+  const userInvestedProjects = useMemo(() => {
+    try {
+      return userInvestments
+        .map(inv => inv.proposals)
+        .filter((proj, idx, arr) => 
+          proj && 
+          arr.findIndex(p => p.id === proj.id) === idx && 
+          proj.category === selectedTab
+        );
+    } catch (error) {
+      console.error('Error calculating invested projects:', error);
+      return [];
+    }
+  }, [userInvestments, selectedTab]);
+
+  useEffect(() => {
+    if (selectedTab) {
+      localStorage.setItem("selectedTab", selectedTab);
+    }
+  }, [selectedTab]);
 
   if (!hasMounted) return null;
 
   return (
     <Admin>
       <div className="min-h-screen bg-gray-100 py-10 px-2">
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+        
+        {/* Error Display */}
+        {error && (
+          <div className="fixed top-4 right-4 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            <strong className="font-bold">Error: </strong>
+            <span className="block sm:inline">{error}</span>
+            <button 
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setError(null)}
+            >
+              <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <title>Close</title>
+                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
+        
+
         {/* Document Viewer Modal */}
         <AnimatePresence>
           {selectedDocument && (
@@ -340,6 +435,7 @@ const Dashboard = () => {
                     <button
                       onClick={() => setSelectedDocument(null)}
                       className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      aria-label="Close document viewer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -354,12 +450,20 @@ const Dashboard = () => {
                         className="max-w-full h-auto"
                         width={800}
                         height={600}
+                        onError={(e) => {
+                          console.error('Error loading image:', e);
+                          toast.error('Failed to load image');
+                        }}
                       />
                     ) : (
                       <iframe
                         src={URL.createObjectURL(selectedDocument.data)}
                         className="w-full h-[80vh]"
                         title={selectedDocument.file_name}
+                        onError={(e) => {
+                          console.error('Error loading document:', e);
+                          toast.error('Failed to load document');
+                        }}
                       />
                     )}
                   </div>
@@ -641,6 +745,11 @@ const Dashboard = () => {
       </div>
     </Admin>
   );
+};
+
+// Add PropTypes validation
+Dashboard.propTypes = {
+  // Add any props if needed
 };
 
 export default withAuth(Dashboard); 

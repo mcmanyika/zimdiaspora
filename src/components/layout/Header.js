@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useGlobalState } from '../../store'
 import { getSupabaseClient } from '../../lib/supabase/client'
 import { 
   ArrowRightOnRectangleIcon,
@@ -12,10 +11,8 @@ import {
 function Header() {
   const supabase = getSupabaseClient()
   const router = useRouter()
-  const [appName] = useGlobalState('appName')
   const [user, setUser] = useState(null)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [hasPayment, setHasPayment] = useState(false)
 
   useEffect(() => {
     const getUser = async () => {
@@ -26,23 +23,6 @@ function Header() {
           return
         }
         setUser(user)
-
-        // Check if user has any completed payments
-        if (user) {
-          const { data: investments, error: investmentsError } = await supabase
-            .from('investments')
-            .select('status')
-            .eq('investor_id', user.id)
-            .eq('status', 'COMPLETED')
-            .limit(1)
-
-          if (investmentsError) {
-            console.error('Error checking investments:', investmentsError)
-            return
-          }
-
-          setHasPayment(investments && investments.length > 0)
-        }
       } catch (err) {
         console.error('Unexpected error getting user:', err)
       }
@@ -58,7 +38,6 @@ function Header() {
   }, [supabase])
 
   useEffect(() => {
-    // Add click event listener to close dropdown when clicking outside
     const handleClickOutside = (event) => {
       const dropdown = document.querySelector('[data-dropdown]')
       const button = document.querySelector('[data-dropdown-button]')
@@ -103,11 +82,8 @@ function Header() {
           </button>
           <div className="mx-2 text-gray-300 self-center">|</div>
           <button
-            className="inline-flex px-1  text-red-600 dark:text-red-400 rounded-lg transition-colors items-center justify-center md:justify-start"
-            onClick={async () => {
-              await supabase.auth.signOut()
-              router.push('/auth/signin')
-            }}
+            className="inline-flex px-1 text-red-600 dark:text-red-400 rounded-lg transition-colors items-center justify-center md:justify-start"
+            onClick={handleSignOut}
           >
             <ArrowRightOnRectangleIcon className="h-6 w-6 text-gray-600" />
             <span className="pl-2 group-hover:inline text-xs text-gray-600">Logout</span>
@@ -122,12 +98,6 @@ function Header() {
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <Link href="/profile">My Profile</Link>
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Sign out
               </button>
             </div>
           )}

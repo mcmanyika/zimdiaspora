@@ -13,35 +13,26 @@ export interface Database {
                 Row: {
                     id: string
                     amount: number
-                    status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
-                    created_at: string
-                    updated_at: string
-                    stripe_payment_intent_id: string | null
-                    transaction_id: string | null
+                    payment_id: string | null
                     proposal_id: string
                     investor_id: string
+                    status: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED'
                 }
                 Insert: {
                     id?: string
                     amount: number
-                    status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
-                    created_at?: string
-                    updated_at?: string
-                    stripe_payment_intent_id?: string | null
-                    transaction_id?: string | null
+                    payment_id?: string | null
                     proposal_id: string
                     investor_id: string
+                    status?: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED'
                 }
                 Update: {
                     id?: string
                     amount?: number
-                    status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED'
-                    created_at?: string
-                    updated_at?: string
-                    stripe_payment_intent_id?: string | null
-                    transaction_id?: string | null
+                    payment_id?: string | null
                     proposal_id?: string
                     investor_id?: string
+                    status?: 'COMPLETED' | 'PENDING' | 'FAILED' | 'CANCELLED'
                 }
             }
             proposals: {

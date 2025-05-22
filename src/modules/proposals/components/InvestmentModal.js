@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CardElement, useStripe, useElements, Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import CheckoutPage from './CheckoutPage';
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 // List of supported countries
 const SUPPORTED_COUNTRIES = [
@@ -19,7 +23,8 @@ const SUPPORTED_COUNTRIES = [
   { code: 'AE', name: 'United Arab Emirates' },
 ];
 
-export default function InvestmentModal({ proposal, onClose, onSubmit }) {
+// Payment Form Component
+function PaymentForm({ proposal, onClose, onSubmit }) {
   const stripe = useStripe();
   const elements = useElements();
   const [amount, setAmount] = useState('');
@@ -305,90 +310,99 @@ export default function InvestmentModal({ proposal, onClose, onSubmit }) {
   };
 
   return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Investment Amount (USD)
+        </label>
+        <div className="mt-1">
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="flex-1 px-4 py-2 block w-full rounded-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
+            required
+            min="1"
+            step="0.01"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Card Details
+        </label>
+        <div className="p-3 border rounded-md">
+          <CardElement
+            className='px-4 p-2'
+            options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+                invalid: {
+                  color: '#9e2146',
+                },
+              },
+            }}
+          />
+        </div>
+        <p className="mt-2 text-sm text-gray-500">
+          We accept most international cards from supported countries. If your card is declined, please try a different card or <Link href="https://buy.stripe.com/14A8wP21U0Eh5YU3dr77O08" className="text-blue-500 font-bold">Click here to pay with Stripe</Link>.
+        </p>
+      </div>
+
+      {error && (
+        <div className="text-red-600 text-sm p-3 bg-red-50 rounded-md">
+          {error}
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 disabled:opacity-50"
+          disabled={!stripe || loading}
+        >
+          {loading ? 'Processing...' : 'Confirm Investment'}
+        </button>
+      </div>
+
+      {investmentDetails && (
+        <div className="mt-4 p-4 bg-green-50 rounded-md">
+          <h3 className="font-bold text-green-800 mb-2">Investment Details</h3>
+          <p className="text-sm text-green-700">Amount: {investmentDetails.amount}</p>
+          <p className="text-sm text-green-700">Project: {investmentDetails.proposalTitle}</p>
+          <p className="text-sm text-green-700">Funding Progress: {investmentDetails.fundingPercentage}%</p>
+          <p className="text-sm text-green-700">Total Raised: {investmentDetails.totalRaised}</p>
+          <p className="text-sm text-green-700">Target Amount: {investmentDetails.targetAmount}</p>
+        </div>
+      )}
+    </form>
+  );
+}
+
+// Main InvestmentModal Component
+export default function InvestmentModal({ proposal, onClose, onSubmit }) {
+  return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-4">Invest in {proposal.title}</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Investment Amount (USD)
-            </label>
-            <div className="mt-1">
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="flex-1 px-4 py-2 block w-full rounded-md border border-gray-300 focus:border-gray-500 focus:ring-gray-500"
-                required
-                min="1"
-                step="0.01"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Card Details
-            </label>
-            <div className="p-3 border rounded-md">
-              <CardElement
-                className='px-4 p-2'
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#424770',
-                      '::placeholder': {
-                        color: '#aab7c4',
-                      },
-                    },
-                    invalid: {
-                      color: '#9e2146',
-                    },
-                  },
-                }}
-              />
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              We accept most international cards from supported countries. If your card is declined, please try a different card or <Link href="https://buy.stripe.com/14A8wP21U0Eh5YU3dr77O08" className="text-blue-500 font-bold">Click here to pay with Stripe</Link>.
-            </p>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm p-3 bg-red-50 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800 disabled:opacity-50"
-              disabled={!stripe || loading}
-            >
-              {loading ? 'Processing...' : 'Confirm Investment'}
-            </button>
-          </div>
-        </form>
-
-        {investmentDetails && (
-          <div className="mt-4 p-4 bg-green-50 rounded-md">
-            <h3 className="font-bold text-green-800 mb-2">Investment Details</h3>
-            <p className="text-sm text-green-700">Amount: {investmentDetails.amount}</p>
-            <p className="text-sm text-green-700">Project: {investmentDetails.proposalTitle}</p>
-            <p className="text-sm text-green-700">Funding Progress: {investmentDetails.fundingPercentage}%</p>
-            <p className="text-sm text-green-700">Total Raised: {investmentDetails.totalRaised}</p>
-            <p className="text-sm text-green-700">Target Amount: {investmentDetails.targetAmount}</p>
-          </div>
-        )}
+        <Elements stripe={stripePromise}>
+          <PaymentForm proposal={proposal} onClose={onClose} onSubmit={onSubmit} />
+        </Elements>
       </div>
     </div>
   );

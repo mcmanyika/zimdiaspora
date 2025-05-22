@@ -21,8 +21,7 @@ export async function createInvestment({
             amount,
             proposal_id: proposalId,
             investor_id: investorId,
-            stripe_payment_intent_id: stripePaymentIntentId,
-            status: 'PENDING',
+            payment_id: stripePaymentIntentId
         })
         .select()
         .single();
@@ -35,18 +34,10 @@ export async function completeInvestment(stripePaymentIntentId: string) {
     const { data: investment, error: fetchError } = await supabase
         .from('investments')
         .select('*')
-        .eq('stripe_payment_intent_id', stripePaymentIntentId)
+        .eq('payment_id', stripePaymentIntentId)
         .single();
 
     if (fetchError) throw fetchError;
-
-    // Update the investment status
-    const { error: updateError } = await supabase
-        .from('investments')
-        .update({ status: 'COMPLETED' })
-        .eq('id', investment.id);
-
-    if (updateError) throw updateError;
 
     // Update the proposal's raised amount and investor count
     const { error: proposalError } = await supabase.rpc(

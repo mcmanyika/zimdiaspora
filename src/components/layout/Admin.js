@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import { useRouter } from 'next/navigation';
 import Header from './Header';
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function Admin({ children }) {

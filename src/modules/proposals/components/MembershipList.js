@@ -6,6 +6,7 @@ import { stripePromise } from '../../../lib/stripe/stripeClient';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-toastify';
 import PersonIcon from '@mui/icons-material/Person';
+import { useRouter } from 'next/navigation';
 
 export default function MembershipList({ showInvestButton = true, showOnlyInvested = false, userId = null }) {
   const [proposals, setProposals] = useState([]);
@@ -20,6 +21,7 @@ export default function MembershipList({ showInvestButton = true, showOnlyInvest
   const [selectedInvestmentProposal, setSelectedInvestmentProposal] = useState(null);
   const [user, setUser] = useState(null);
   const supabase = createClientComponentClient();
+  const router = useRouter();
 
   const formatCurrency = (amount, currency = 'USD') => {
     return new Intl.NumberFormat(navigator.language, {
@@ -140,8 +142,7 @@ export default function MembershipList({ showInvestButton = true, showOnlyInvest
       return;
     }
 
-    setSelectedInvestmentProposal(proposal);
-    setShowInvestmentModal(true);
+    router.push(`/checkout/${proposal.id}`);
   };
 
   const handleInvestmentSubmit = async (investmentData) => {

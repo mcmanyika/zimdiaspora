@@ -10,6 +10,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { stripePromise } from '../../../lib/stripe/stripeClient';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 
 export default function ProposalList({ showInvestButton = true, category = null, showOnlyInvested = false, userId = null }) {
   const [proposals, setProposals] = useState([]);
@@ -27,6 +28,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
   const [hasMembershipPayment, setHasMembershipPayment] = useState(false);
   const proposalsPerPage = 5;
   const supabase = createClientComponentClient();
+  const router = useRouter();
 
   // Format currency based on user's locale
   const formatCurrency = (amount, currency = 'USD') => {
@@ -178,8 +180,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
       return;
     }
 
-    setSelectedInvestmentProposal(proposal);
-    setShowInvestmentModal(true);
+    router.push(`/checkout/${proposal.id}`);
   };
 
   const handleInvestmentSubmit = async (investmentData) => {
@@ -379,7 +380,7 @@ export default function ProposalList({ showInvestButton = true, category = null,
               </div>
 
               {/* Action Button */}
-              {showInvestButton && proposal.status === 'active' && !(proposal.category === 'MEMBERSHIP' && hasMembershipPayment) && (
+              {showInvestButton && proposal.status === 'active' && (
                 <div className="mt-6">
                   <button
                     onClick={(e) => handleInvestClick(proposal, e)}
