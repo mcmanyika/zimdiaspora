@@ -555,11 +555,11 @@ const Dashboard = () => {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="hidden h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                     </svg>
                   )}
-                  <span className="hidden md:inline">{tab.name}</span>
+                  <span className="md:inline">{tab.name}</span>
                 </button>
               ))}
             </div>
@@ -610,7 +610,7 @@ const Dashboard = () => {
           <div className="bg-gray-100 w-full  text-gray-800 p-6 mb-6">
              {/* User Summary */}
           <div className="grid grid-cols-1 gap-4 w-full mb-6">
-            <div className=" p-6 flex flex-col justify-center h-full">
+            <div className="flex flex-col justify-center h-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="bg-white p-2 text-center">
                   <div className="text-gray-600 mb-2 flex items-center justify-center gap-2">
@@ -639,7 +639,7 @@ const Dashboard = () => {
             </div>
           </div>
           {userInvestedProjects.length > 0 && (
-                <div className="w-full pb-8">
+                <div className="pb-8">
                   <div className="text-xs font-semibold text-gray-700 mb-4 text-center uppercase">
                    Category: {selectedTab}
                   </div>
@@ -648,7 +648,7 @@ const Dashboard = () => {
                       <button
                         key={project.id}
                         onClick={() => handleProjectSelect(project)}
-                        className={`px-6 py-3  text-sm font-medium transition-all duration-200 ${
+                        className={`w-full md:flex-1 px-6 py-3  rounded text-sm font-medium transition-all duration-200 ${
                           selectedProjectId === project.id
                             ? "bg-gray-800 text-white capitalize shadow-md"
                             : "bg-white text-gray-700 hover:bg-gray-50 hover:shadow-md"
@@ -755,7 +755,7 @@ const Dashboard = () => {
                 <button
                   key={category.id}
                   onClick={() => router.push('/documents')}
-                  className="w-full p-4 m-2 rounded-lg bg-gray-100 text-gray-700 font-medium text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
+                  className="w-full p-4 mb-2 rounded bg-gray-100 text-gray-700 font-medium text-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-3"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={category.icon} />
@@ -771,7 +771,6 @@ const Dashboard = () => {
           {proposalData && (
             <div className="mt-8">
               <div className="flex justify-between items-center mb-4">
-                <div className="text-blue-700 font-bold">ACTIVE INVESTMENTS</div>
                 <div className="flex items-center space-x-2">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
