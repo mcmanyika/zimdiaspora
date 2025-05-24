@@ -82,64 +82,99 @@ function SignIn() {
   
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="flex w-full max-w-4xl bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-8">
+      <div className="flex w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden">
         {/* Left: Illustration */}
-        <div className="hidden md:flex items-center justify-center w-1/2 bg-gray-50 p-8">
-          {/*    */}
+        <div className="hidden md:flex items-center justify-center w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 p-12">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome Back</h1>
+            <p className="text-gray-600">Join our community and start your journey today</p>
+          </div>
         </div>
         {/* Right: Form */}
-        <div className="w-full md:w-1/2 p-8 space-y-6 flex flex-col justify-center">
-          <h2 className="text-2xl font-bold text-center">
-            {isSignUp ? 'Create an Account' : 'Sign In'}
-          </h2>
+        <div className="w-full md:w-1/2 p-6 md:p-12 space-y-6">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">
+              {isSignUp ? 'Create an Account' : 'Sign In'}
+            </h2>
+            <p className="text-gray-600 mt-2">
+              {isSignUp ? 'Join us today' : 'Welcome back'}
+            </p>
+          </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
           {showVerifyEmailMessage && (
-            <p className="text-green-600 text-sm text-center">
+            <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg text-sm">
               A verification email has been sent. Please check your inbox to verify your email address.
-            </p>
+            </div>
           )}
 
-          {isSignUp && (
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full border border-gray-300 p-2 rounded"
-            />
-          )}
+          <div className="space-y-4">
+            {isSignUp && (
+              <div>
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition"
+                />
+              </div>
+            )}
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 p-2 rounded"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 p-2 rounded"
-          />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition"
+              />
+            </div>
+          </div>
 
           <button
             onClick={handleSubmit}
-            className="w-full bg-black text-white py-2 rounded hover:bg-gray-800 transition"
+            className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition duration-200 font-medium text-sm"
           >
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+            {isSignUp ? 'Create Account' : 'Sign In'}
           </button>
 
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="w-full text-sm text-gray-600 hover:underline"
-          >
-            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-          </button>
+          <div className="text-center">
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm text-gray-600 hover:text-black transition duration-200"
+            >
+              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
