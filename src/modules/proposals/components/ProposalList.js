@@ -12,6 +12,31 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
 
+// Loading skeleton component
+const ProposalCardSkeleton = () => (
+  <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+    <div className="space-y-4">
+      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+      <div className="h-2 bg-gray-200 rounded w-full"></div>
+    </div>
+  </div>
+);
+
+// Empty state component
+const EmptyState = () => (
+  <div className="text-center py-12">
+    <div className="text-gray-400 mb-4">
+      <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </div>
+    <h3 className="text-lg font-medium text-gray-900">No proposals found</h3>
+    <p className="mt-2 text-sm text-gray-500">Try adjusting your filters or check back later for new proposals.</p>
+  </div>
+);
+
 export default function ProposalList({ showInvestButton = true, category = null, showOnlyInvested = false, userId = null }) {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -301,15 +326,23 @@ export default function ProposalList({ showInvestButton = true, category = null,
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center p-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      {[...Array(4)].map((_, index) => (
+        <ProposalCardSkeleton key={index} />
+      ))}
     </div>
   );
   if (error) return (
-    <div className="text-red-600 p-4 rounded-md bg-red-50">
-      Unable to load proposals. Please try again later.
+    <div className="text-red-600 p-6 rounded-lg bg-red-50 border border-red-100">
+      <div className="flex items-center">
+        <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span className="font-medium">Unable to load proposals</span>
+      </div>
+      <p className="mt-2 text-sm">Please try again later.</p>
       {process.env.NODE_ENV === 'development' && (
-        <pre className="mt-2 text-sm">{error.toString()}</pre>
+        <pre className="mt-4 p-4 bg-red-100 rounded text-xs overflow-auto">{error.toString()}</pre>
       )}
     </div>
   );
@@ -317,107 +350,145 @@ export default function ProposalList({ showInvestButton = true, category = null,
   return (
     <div className="w-full">
       {/* Header Row for Sorting */}
-      <div className="hidden md:flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
-        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('title')}>
-          Title {sortField === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
+      <div className="hidden md:flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+        <div 
+          className={`text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer transition-colors duration-200 ${
+            sortField === 'title' ? 'text-gray-900' : 'hover:text-gray-700'
+          }`} 
+          onClick={() => handleSort('title')}
+        >
+          Title {sortField === 'title' && (
+            <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+          )}
         </div>
-        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('budget')}>
-          Target Amount {sortField === 'budget' && (sortDirection === 'asc' ? '↑' : '↓')}
+        <div 
+          className={`text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer transition-colors duration-200 ${
+            sortField === 'budget' ? 'text-gray-900' : 'hover:text-gray-700'
+          }`} 
+          onClick={() => handleSort('budget')}
+        >
+          Target Amount {sortField === 'budget' && (
+            <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+          )}
         </div>
-        <div className="text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => handleSort('amount_raised')}>
-          Raised Amount {sortField === 'amount_raised' && (sortDirection === 'asc' ? '↑' : '↓')}
+        <div 
+          className={`text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer transition-colors duration-200 ${
+            sortField === 'amount_raised' ? 'text-gray-900' : 'hover:text-gray-700'
+          }`} 
+          onClick={() => handleSort('amount_raised')}
+        >
+          Raised Amount {sortField === 'amount_raised' && (
+            <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+          )}
         </div>
       </div>
 
       {/* Proposal Cards Grid */}
       <div className={`grid grid-cols-1 ${currentProposals.length === 1 ? 'w-full' : 'md:grid-cols-2 lg:grid-cols-2'} gap-6`}>
-        {currentProposals.map((proposal) => (
-          <div
-            key={proposal.id}
-            className="bg-white cursor-pointer rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-100"
-            onClick={() => setSelectedProposal(proposal)}
-          >
-            <div className="p-2">
-              {/* Title */}
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                  {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
-                </h3>
-              </div>
-
-              {/* Budget and Raised Amount */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Target Amount</span>
-                  <span className="font-medium text-gray-900">
-                    {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
-                  </span>
+        {currentProposals.length === 0 ? (
+          <EmptyState />
+        ) : (
+          currentProposals.map((proposal) => (
+            <div
+              key={proposal.id}
+              className="bg-white cursor-pointer rounded-xl shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-100 transform hover:-translate-y-1"
+              onClick={() => setSelectedProposal(proposal)}
+            >
+              <div className="p-6">
+                {/* Title */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900 line-clamp-2">
+                    {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1).toLowerCase()}
+                  </h3>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500">Raised</span>
+                {/* Budget and Raised Amount */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Target Amount</span>
                     <span className="font-medium text-gray-900">
-                      {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')}
+                      {formatCurrency(proposal.budget || 0, proposal.currency || 'USD')}
                     </span>
                   </div>
-                  <LinearProgress
-                    variant="determinate"
-                    value={Math.min((proposal.amount_raised / proposal.budget) * 100 || 0, 100)}
-                    sx={{
-                      height: 8,
-                      borderRadius: 4,
-                      '& .MuiLinearProgress-bar': {
-                        backgroundColor: '#00D48A'
-                      },
-                      backgroundColor: '#f3f4f6'
-                    }}
-                  />
-                  <div className="text-sm text-gray-500 text-right">
-                    {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
+
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Raised</span>
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(proposal.amount_raised || 0, proposal.currency || 'USD')}
+                      </span>
+                    </div>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min((proposal.amount_raised / proposal.budget) * 100 || 0, 100)}
+                      sx={{
+                        height: 8,
+                        borderRadius: 4,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: '#00D48A',
+                          transition: 'transform 0.4s ease'
+                        },
+                        backgroundColor: '#f3f4f6'
+                      }}
+                    />
+                    <div className="text-sm text-gray-500 text-right">
+                      {Math.round((proposal.amount_raised / proposal.budget) * 100) || 0}% Funded
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Button */}
-              {showInvestButton && proposal.status === 'active' && !hasMembershipPayment && (
-                <div className="mt-6">
-                  <button
-                    onClick={(e) => handleInvestClick(proposal, e)}
-                    className="w-full px-4 py-2 bg-cyan-400 text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
-                  >
-                    Make Payment
-                  </button>
-                </div>
-              )}
+                {/* Action Button */}
+                {showInvestButton && proposal.status === 'active' && !hasMembershipPayment && (
+                  <div className="mt-8">
+                    <button
+                      onClick={(e) => handleInvestClick(proposal, e)}
+                      className="w-full px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium shadow-sm hover:shadow-md"
+                    >
+                      Make Payment
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-center items-center space-x-4 mt-8">
+      <div className="flex justify-center items-center space-x-4 mt-12">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
             currentPage === 1
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
+              : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'
           }`}
         >
           Previous
         </button>
-        <span className="text-gray-600 font-medium">
-          Page {currentPage} of {totalPages}
-        </span>
+        <div className="flex items-center space-x-2">
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index}
+              onClick={() => handlePageChange(index + 1)}
+              className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 ${
+                currentPage === index + 1
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+          className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
             currentPage === totalPages
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
+              : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md'
           }`}
         >
           Next
