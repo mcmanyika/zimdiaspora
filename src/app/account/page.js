@@ -83,20 +83,29 @@ const Dashboard = () => {
       numberOfProjects: 0,
       currentProjectInvestment: 0
     };
-    const uniqueProjects = new Set();
-    investments.forEach(inv => {
-      stats.totalInvestment += inv.amount;
-      uniqueProjects.add(inv.proposal_id);
-    });
-    stats.numberOfProjects = uniqueProjects.size;
 
-    // Calculate currentProjectInvestment from transactions (real-time, user-specific)
-    const { data: userTx, error: userTxError } = await supabase
+    // Get all successful transactions
+    const { data: transactions, error: txError } = await supabase
       .from('transactions')
       .select('amount, metadata')
       .eq('status', 'succeeded');
-    if (!userTxError && userTx) {
-      stats.currentProjectInvestment = userTx
+
+    if (!txError && transactions) {
+      // Calculate totalInvestment from transactions
+      stats.totalInvestment = transactions
+        .filter(tx => tx.metadata?.investor_id === user.id)
+        .reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+      // Calculate numberOfProjects from unique proposal_ids in transactions
+      const uniqueProjects = new Set(
+        transactions
+          .filter(tx => tx.metadata?.investor_id === user.id)
+          .map(tx => tx.metadata?.proposal_id)
+      );
+      stats.numberOfProjects = uniqueProjects.size;
+
+      // Calculate currentProjectInvestment for selected project
+      stats.currentProjectInvestment = transactions
         .filter(tx =>
           tx.metadata?.proposal_id === selectedId &&
           tx.metadata?.investor_id === user.id
