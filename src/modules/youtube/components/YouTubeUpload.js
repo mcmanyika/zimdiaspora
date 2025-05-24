@@ -9,8 +9,23 @@ const YouTubeUpload = () => {
   const supabase = createClientComponentClient();
 
   const validateYoutubeUrl = (url) => {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
-    return youtubeRegex.test(url);
+    // Handle various YouTube URL formats
+    const patterns = [
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})$/,
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})$/,
+      /^(https?:\/\/)?(www\.)?(youtu\.be\/)([a-zA-Z0-9_-]{11})$/,
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/v\/)([a-zA-Z0-9_-]{11})$/,
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})(\&.*)?$/
+    ];
+
+    // Check if URL matches any of the patterns
+    const isValid = patterns.some(pattern => pattern.test(url));
+    
+    if (!isValid) {
+      toast.error('Please enter a valid YouTube URL. Supported formats:\n- youtube.com/watch?v=VIDEO_ID\n- youtu.be/VIDEO_ID\n- youtube.com/embed/VIDEO_ID');
+    }
+    
+    return isValid;
   };
 
   const handleSubmit = async (event) => {
@@ -22,7 +37,6 @@ const YouTubeUpload = () => {
     }
 
     if (!validateYoutubeUrl(youtubeUrl)) {
-      toast.error('Please enter a valid YouTube URL');
       return;
     }
 

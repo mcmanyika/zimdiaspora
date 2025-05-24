@@ -41,7 +41,7 @@ function PaymentForm({ proposalId, investorId, amount }) {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/success?amount=${amount}`,
+          return_url: `${window.location.origin}/success?amount=${amount}&proposalId=${proposalId}&investorId=${investorId}`,
         },
         redirect: 'if_required'
       });
@@ -49,6 +49,10 @@ function PaymentForm({ proposalId, investorId, amount }) {
       if (error) {
         if (error.type === "card_error" || error.type === "validation_error") {
           setMessage(error.message);
+        } else if (error.type === "authentication_error") {
+          setMessage("Your payment session has expired. Please refresh the page and try again.");
+        } else if (error.type === "api_error") {
+          setMessage("We're having trouble connecting to our payment system. Please try again in a few minutes.");
         } else {
           setMessage("An unexpected error occurred. Please try again later.");
         }
@@ -77,9 +81,13 @@ function PaymentForm({ proposalId, investorId, amount }) {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.message || 'Failed to save investment data');
+          const errorMessage = data.message || 'Failed to save investment data';
+          toast.error(errorMessage);
+          throw new Error(errorMessage);
         }
 
+        // Show success message before redirect
+        toast.success('Payment successful! Redirecting...');
         // Redirect to success page
         router.push('/success');
       }
@@ -106,8 +114,11 @@ function PaymentForm({ proposalId, investorId, amount }) {
       >
         <span id="button-text">
           {isLoading ? (
-            <div className="spinner" id="spinner" role="status" aria-label="Processing payment">
-              <span className="sr-only">Processing...</span>
+            <div className="spinner-container">
+              <div className="spinner" id="spinner" role="status" aria-label="Processing payment">
+                <span className="sr-only">Processing payment...</span>
+              </div>
+              <span className="loading-text">Processing payment...</span>
             </div>
           ) : "Pay now"}
         </span>
