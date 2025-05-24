@@ -540,7 +540,7 @@ const Dashboard = () => {
                         </svg>
                         <span className="font-semibold">Total Investment</span>
                       </div>
-                      <div className="text-3xl font-bold text-gray-800">
+                      <div className="text-3xl font-bold text-gray-800 text-center">
                         ${userStats.totalInvestment.toLocaleString()}
                       </div>
                     </motion.div>
@@ -555,7 +555,7 @@ const Dashboard = () => {
                         </svg>
                         <span className="font-semibold">Number of Investments</span>
                       </div>
-                      <div className="text-3xl font-bold text-gray-800">
+                      <div className="text-3xl font-bold text-gray-800 text-center">
                         {userStats.numberOfProjects}
                       </div>
                     </motion.div>
