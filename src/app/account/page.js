@@ -502,7 +502,7 @@ const Dashboard = () => {
                     disabled={isCategoryLoading}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`relative px-4 py-3 rounded-xl font-medium text-sm transition-all duration-300 flex items-center gap-2 ${
+                    className={`relative px-4 py-3 rounded-xl font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
                       selectedTab === tab.name
                         ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg"
                         : "bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg"
