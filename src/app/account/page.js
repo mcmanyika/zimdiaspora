@@ -494,7 +494,7 @@ const Dashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 backdrop-blur-sm bg-opacity-90">
             {/* Category Tabs */}
             <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-8">
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6  p-6 gap-3">
                 {CATEGORIES.map((tab) => (
                   <motion.button
                     key={tab.name}
@@ -676,7 +676,7 @@ const Dashboard = () => {
                         />
                       ))}
                     </div>
-                    <div className="text-base font-semibold text-gray-700 mb-2">AMOUNT INVESTED</div>
+                    <div className="text-base font-semibold text-gray-700 mb-2">AMOUNT YOU INVESTED</div>
                     <div className="text-2xl font-bold text-blue-600">
                       {isLoading ? (
                         <div className="animate-pulse bg-gray-200 h-8 w-32 mx-auto rounded-lg"></div>
